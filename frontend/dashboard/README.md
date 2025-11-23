@@ -143,9 +143,9 @@ If you have any issues running the project, check:
 ⸻
 
 🏁 Contributors
-• Backend Engineer A
-• Backend Engineer B
+• Backend Engineer : Lautaro Marquez
+• Backend Engineer : Lucas Gonzaga Andrade
 • Software Engineer : Azul Kuri
-• Frontend Engineer B
+• Frontend Engineer : Esteban Porporato
 
 FLUXEON — Grid flexibility, orchestrated. ⚡💚
