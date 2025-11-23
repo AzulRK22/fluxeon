@@ -9,9 +9,9 @@ const LABELS: Record<number, string> = {
 };
 
 const COLORS: Record<number, string> = {
-  0: "bg-[#00E6981A] text-[#00E698] border-[#00E69833]",
-  1: "bg-[#FFC62E1A] text-[#FFC62E] border-[#FFC62E33]",
-  2: "bg-[#FF3B301A] text-[#FF3B30] border-[#FF3B3033]",
+  0: "bg-emerald-500/15 text-emerald-300 border-emerald-500/60",
+  1: "bg-amber-500/15 text-amber-300 border-amber-500/60",
+  2: "bg-red-500/15 text-red-300 border-red-500/60",
 };
 
 export default function StatusChip({ state }: Props) {
@@ -20,7 +20,7 @@ export default function StatusChip({ state }: Props) {
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border ${colorClasses}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] border ${colorClasses}`}
     >
       {label}
     </span>
