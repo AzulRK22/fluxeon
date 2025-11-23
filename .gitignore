@@ -1,0 +1,14 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+
+# Node / Next.js
+frontend/dashboard/node_modules/
+frontend/dashboard/.next/
+frontend/dashboard/.turbo/
+frontend/dashboard/.swc/
+
+# OS / editor
+.DS_Store
+.vscode/
