@@ -1,7 +1,9 @@
+// frontend/dashboard/src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import Link from "next/link";
+import Image from "next/image";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -10,7 +12,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "FLUXEON Command Centre",
-  description: "DSO copilot for grid-scale flexibility orchestration.",
+  description:
+    "FLUXEON – DSO copilot for grid-scale flexibility orchestration using AI and Beckn.",
 };
 
 export default function RootLayout({
@@ -24,38 +27,80 @@ export default function RootLayout({
         className={`${inter.className} bg-[#020617] text-slate-100 antialiased`}
       >
         <div className="min-h-screen flex flex-col">
-          <header className="border-b border-slate-800 px-6 py-3 bg-[#020617]/95 backdrop-blur flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">
-                FLUXEON <span className="text-emerald-400">Command Centre</span>
-              </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Monitor feeders, detect risk, dispatch flexibility in seconds.
-              </p>
+          {/* Top shell / app chrome */}
+          <header className="border-b border-slate-800 px-6 py-3 bg-[#020617]/95 backdrop-blur flex items-center justify-between gap-4">
+            {/* Brand block */}
+            <div className="flex items-center gap-3">
+              {/* Tu logo */}
+              <div className="h-9 w-9 rounded-xl bg-slate-900/60 flex items-center justify-center overflow-hidden ">
+                <Image
+                  src="/logoof.png"
+                  alt="FLUXEON logo"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                  priority
+                />
+              </div>
+
+              <div className="space-y-0.5">
+                <h1 className="text-lg sm:text-xl font-semibold tracking-tight">
+                  <span className="text-slate-100">FLUXEON</span>{" "}
+                  <span className="bg-linear-to-r from-emerald-400 via-sky-400 to-blue-400 bg-clip-text text-transparent">
+                    Command Centre
+                  </span>
+                </h1>
+                <p className="text-[11px] sm:text-xs text-slate-500">
+                  DSO copilot for grid-scale demand flexibility &amp; Beckn
+                  orchestration.
+                </p>
+              </div>
             </div>
 
-            {/* 🔹 Navegación entre vistas */}
-            <nav className="flex items-center gap-4 text-xs text-slate-400">
-              <Link href="/" className="hover:text-slate-100">
+            {/* Navigation */}
+            <nav className="hidden sm:flex items-center gap-2 text-xs">
+              <Link
+                href="/"
+                className="px-3 py-1.5 rounded-full border border-slate-700/80 bg-slate-900/60 text-slate-100 font-medium hover:border-sky-500/80 hover:text-sky-100 transition-colors"
+              >
                 Overview
               </Link>
-              <span className="h-4 w-px bg-slate-700" />
-              <Link href="/front2" className="hover:text-slate-100">
+              <Link
+                href="/front2"
+                className="px-3 py-1.5 rounded-full border border-slate-700/80 bg-slate-900/30 text-slate-400 hover:border-emerald-500/80 hover:text-emerald-100 transition-colors"
+              >
                 Flex orchestration
               </Link>
             </nav>
 
-            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-              <span className="inline-flex items-center gap-1">
+            {/* Status / meta info */}
+            <div className="flex flex-col items-end gap-1 text-[11px] text-slate-400">
+              <div className="inline-flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                Backend: online
+                <span>Backend: online</span>
+              </div>
+              <span className="hidden md:inline-flex px-2 py-0.5 rounded-full border border-slate-700 bg-slate-900/70 text-[10px] uppercase tracking-wide">
+                Hackathon demo · FLUXEON v0.1
               </span>
             </div>
           </header>
 
-          <main className="flex-1 px-6 py-5">
+          {/* Main content */}
+          <main className="flex-1 px-4 sm:px-6 py-5">
             <div className="max-w-6xl mx-auto space-y-4">{children}</div>
           </main>
+
+          {/* Optional slim footer */}
+          <footer className="border-t border-slate-800 px-6 py-2 text-[11px] text-slate-500 bg-[#020617]/95">
+            <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
+              <span>
+                © {new Date().getFullYear()} FLUXEON · Grid-flexibility copilot.
+              </span>
+              <span className="hidden sm:inline">
+                Beckn-ready · AI classification 0/1/2 · Sub-5s SLA target.
+              </span>
+            </div>
+          </footer>
         </div>
       </body>
     </html>

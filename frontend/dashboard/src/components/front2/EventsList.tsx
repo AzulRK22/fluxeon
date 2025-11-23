@@ -1,3 +1,4 @@
+// frontend/dashboard/src/components/front2/EventsList.tsx
 import React from "react";
 
 export interface FlexEvent {
@@ -7,12 +8,12 @@ export interface FlexEvent {
   status: "ACTIVE" | "COMPLETED" | "FAILED";
   flexRequested: number; // kW
   flexDelivered: number; // kW
-  timestamp: string;
+  timestamp: string; // ISO string from backend
   derCount: number;
   obpId: string;
 }
 
-interface EventsListProps {
+export interface EventsListProps {
   events?: FlexEvent[];
   isLoading?: boolean;
   onEventClick?: (event: FlexEvent) => void;
@@ -24,6 +25,7 @@ const STATUS_BADGE: Record<FlexEvent["status"], string> = {
   FAILED: "bg-red-500/15 text-red-300 border border-red-500/60",
 };
 
+// Fallback mock data if backend is not wired yet
 const MOCK_EVENTS: FlexEvent[] = [
   {
     id: "EVT-001",
@@ -32,7 +34,7 @@ const MOCK_EVENTS: FlexEvent[] = [
     status: "ACTIVE",
     flexRequested: 45,
     flexDelivered: 42,
-    timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
+    timestamp: new Date("2025-11-22T14:23:00Z").toISOString(),
     derCount: 3,
     obpId: "OBP-12345",
   },
@@ -43,7 +45,7 @@ const MOCK_EVENTS: FlexEvent[] = [
     status: "COMPLETED",
     flexRequested: 60,
     flexDelivered: 58,
-    timestamp: new Date(Date.now() - 25 * 60000).toISOString(),
+    timestamp: new Date("2025-11-22T14:00:00Z").toISOString(),
     derCount: 5,
     obpId: "OBP-12346",
   },
@@ -54,35 +56,32 @@ const MOCK_EVENTS: FlexEvent[] = [
     status: "ACTIVE",
     flexRequested: 30,
     flexDelivered: 28,
-    timestamp: new Date(Date.now() - 10 * 60000).toISOString(),
+    timestamp: new Date("2025-11-22T14:15:00Z").toISOString(),
     derCount: 2,
     obpId: "OBP-12347",
   },
 ];
+
+const formatTime = (isoString: string) => {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "—";
+  // Stable, no depende de "ahora" → sin problemas de hidratación
+  return date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const successRate = (requested: number, delivered: number) => {
+  if (!requested) return 0;
+  return Math.round((delivered / requested) * 100);
+};
 
 export const EventsList: React.FC<EventsListProps> = ({
   events = MOCK_EVENTS,
   isLoading = false,
   onEventClick,
 }) => {
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return date.toLocaleDateString();
-  };
-
-  const successRate = (requested: number, delivered: number) => {
-    if (!requested) return 0;
-    return Math.round((delivered / requested) * 100);
-  };
-
   if (isLoading) {
     return (
       <div className="py-6 text-center text-sm text-slate-400">
@@ -91,7 +90,7 @@ export const EventsList: React.FC<EventsListProps> = ({
     );
   }
 
-  if (events.length === 0) {
+  if (!events.length) {
     return (
       <div className="py-6 text-center text-sm text-slate-400">
         No active events

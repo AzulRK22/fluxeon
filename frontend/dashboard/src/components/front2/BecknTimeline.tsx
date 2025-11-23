@@ -1,6 +1,7 @@
+// frontend/dashboard/src/components/front2/BecknTimeline.tsx
 import React from "react";
 
-const BECKN_STEPS = [
+export const BECKN_STEPS = [
   "DISCOVER",
   "SELECT",
   "INIT",
@@ -13,7 +14,10 @@ export type BecknStep = (typeof BECKN_STEPS)[number];
 
 interface BecknTimelineProps {
   currentStep: BecknStep;
-  // opcionalmente timestamps por paso, ej: { DISCOVER: "14:23:01", SELECT: "14:23:02", ... }
+  /**
+   * Optional timestamps per step, e.g.:
+   * { DISCOVER: "14:23:01", SELECT: "14:23:02", ... }
+   */
   timestamps?: Partial<Record<BecknStep, string>>;
 }
 
@@ -25,7 +29,7 @@ export const BecknTimeline: React.FC<BecknTimelineProps> = ({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Timeline horizontal */}
+      {/* Horizontal timeline */}
       <div className="flex items-center justify-between gap-2">
         {BECKN_STEPS.map((step, index) => {
           const isCompleted = index < currentIndex;
@@ -36,15 +40,14 @@ export const BecknTimeline: React.FC<BecknTimelineProps> = ({
               {/* Step pill */}
               <div className="flex flex-col items-center gap-1 flex-1">
                 <div
-                  className={[
-                    "w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-[11px] font-semibold",
-                    "transition-all duration-300",
+                  aria-current={isCurrent ? "step" : undefined}
+                  className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-[11px] font-semibold transition-all duration-300 ${
                     isCurrent
                       ? "bg-emerald-400 text-slate-950 ring-2 ring-emerald-300 shadow-md shadow-emerald-500/30 scale-105"
                       : isCompleted
                       ? "bg-emerald-500 text-slate-950"
-                      : "bg-slate-800 text-slate-400",
-                  ].join(" ")}
+                      : "bg-slate-800 text-slate-400"
+                  }`}
                 >
                   {isCompleted ? "✓" : step[0]}
                 </div>
@@ -61,10 +64,9 @@ export const BecknTimeline: React.FC<BecknTimelineProps> = ({
               {/* Connector */}
               {index < BECKN_STEPS.length - 1 && (
                 <div
-                  className={[
-                    "flex-1 h-0.5 -mx-1 md:-mx-2 transition-colors duration-300",
-                    index < currentIndex ? "bg-emerald-400" : "bg-slate-700",
-                  ].join(" ")}
+                  className={`flex-1 h-0.5 -mx-1 md:-mx-2 transition-colors duration-300 ${
+                    index < currentIndex ? "bg-emerald-400" : "bg-slate-700"
+                  }`}
                 />
               )}
             </React.Fragment>

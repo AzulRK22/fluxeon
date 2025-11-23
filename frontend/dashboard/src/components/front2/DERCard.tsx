@@ -1,3 +1,4 @@
+// frontend/dashboard/src/components/front2/DERCard.tsx
 import React from "react";
 
 export interface DERCardProps {
@@ -36,8 +37,12 @@ export const DERCard: React.FC<DERCardProps> = ({
   responseTime,
   cost,
 }) => {
-  const utilization =
-    capacity > 0 ? ((capacity - available) / capacity) * 100 : 0;
+  // safety por si backend manda cosas raras
+  const safeCapacity = Math.max(0, capacity);
+  const safeAvailable = Math.min(safeCapacity, Math.max(0, available));
+  const usedKw = Math.max(0, safeCapacity - safeAvailable);
+
+  const utilization = safeCapacity > 0 ? (usedKw / safeCapacity) * 100 : 0;
   const utilizationPercent = Math.min(100, Math.max(0, utilization));
 
   const utilizationColor =
@@ -47,14 +52,15 @@ export const DERCard: React.FC<DERCardProps> = ({
       ? "bg-amber-400"
       : "bg-emerald-400";
 
-  const usedKw = Math.max(0, capacity - available);
-
   return (
-    <div className="border border-slate-800 rounded-xl bg-[#02091F] px-3.5 py-3 shadow-sm hover:border-slate-600 transition-colors">
+    <div
+      className="border border-slate-800 rounded-xl bg-[#02091F] px-3.5 py-3 shadow-sm hover:border-slate-600 transition-colors"
+      aria-label={`${name} (${type}) DER card`}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start gap-3">
-          <span className="text-2xl leading-none">
+          <span className="text-2xl leading-none" aria-hidden="true">
             {TYPE_ICONS[type] ?? "⚡"}
           </span>
           <div>
@@ -71,15 +77,21 @@ export const DERCard: React.FC<DERCardProps> = ({
         </span>
       </div>
 
-      {/* Capacity / Utilization */}
+      {/* Capacity / Utilisation */}
       <div className="mb-3">
         <div className="flex justify-between items-center mb-1">
           <span className="text-[11px] text-slate-400">Utilisation</span>
           <span className="text-[11px] font-medium text-slate-200">
-            {usedKw} / {capacity} kW ·{" "}
-            {Number.isFinite(utilizationPercent)
-              ? `${Math.round(utilizationPercent)}%`
-              : "–"}
+            {safeCapacity > 0 ? (
+              <>
+                {usedKw} / {safeCapacity} kW ·{" "}
+                {Number.isFinite(utilizationPercent)
+                  ? `${Math.round(utilizationPercent)}%`
+                  : "–"}
+              </>
+            ) : (
+              "–"
+            )}
           </span>
         </div>
         <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
@@ -98,9 +110,11 @@ export const DERCard: React.FC<DERCardProps> = ({
         </div>
         <div>
           <span className="text-slate-400">Available</span>
-          <p className="text-emerald-300 font-medium mt-0.5">{available} kW</p>
+          <p className="text-emerald-300 font-medium mt-0.5">
+            {safeAvailable} kW
+          </p>
         </div>
-        {responseTime !== undefined && (
+        {typeof responseTime === "number" && (
           <div>
             <span className="text-slate-400">Response time</span>
             <p className="text-slate-100 font-medium mt-0.5">
@@ -108,7 +122,7 @@ export const DERCard: React.FC<DERCardProps> = ({
             </p>
           </div>
         )}
-        {cost !== undefined && (
+        {typeof cost === "number" && (
           <div>
             <span className="text-slate-400">Cost</span>
             <p className="text-slate-100 font-medium mt-0.5">
@@ -120,7 +134,10 @@ export const DERCard: React.FC<DERCardProps> = ({
 
       {/* Quick action */}
       {status === "AVAILABLE" && (
-        <button className="w-full mt-3 rounded-lg bg-emerald-500/90 hover:bg-emerald-400 text-slate-950 text-xs font-semibold py-2 transition-colors">
+        <button
+          type="button"
+          className="w-full mt-3 rounded-lg bg-emerald-500/90 hover:bg-emerald-400 text-slate-950 text-xs font-semibold py-2 transition-colors"
+        >
           Allocate flexibility
         </button>
       )}

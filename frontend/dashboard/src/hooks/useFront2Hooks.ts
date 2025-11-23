@@ -1,58 +1,101 @@
-import { useState, useEffect } from "react";
+// frontend/dashboard/src/hooks/useFront2Hooks.ts
+import { useEffect, useState } from "react";
+
 import type { FlexEvent } from "@/components/front2/EventsList";
-import type { DERCardProps } from "@/components/front2/DERCard";
-import type { AuditLog } from "@/components/front2/AuditView";
 import type { BecknStep } from "@/components/front2/BecknTimeline";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
-/* ---------- Types ---------- */
+/* -------------------------------------------------------------------------- */
+/*                                Backend DTOs                                */
+/* -------------------------------------------------------------------------- */
 
-export interface FeederState {
-  id: string;
-  state: number; // 0,1,2
-  load_kw: number;
-  threshold_kw: number;
-  history_kw?: number[];
-  forecast_kw?: number[];
+interface BackendEventDTO {
+  event_id: string;
+  feeder_id: string;
+  status: string; // Beckn step: DISCOVER/SELECT/INIT/CONFIRM/STATUS/COMPLETE/FAILED
+  requested_kw: number;
+  delivered_kw: number;
 }
 
-/* ---------- Flex events ---------- */
+interface BackendAuditEntryDTO {
+  ts: string;
+  message: string;
+}
+
+interface BackendAuditDTO {
+  obp_id: string;
+  entries: BackendAuditEntryDTO[];
+}
+
+/* ------------------------------ Feeders (list) ----------------------------- */
+
+export interface FeederSummary {
+  id: string;
+  name: string;
+  state: number; // 0: Normal, 1: Warning, 2: Critical
+  load_kw: number;
+  temperature: number;
+}
+
+/* ----------------------------- Feeder state v2 ----------------------------- */
+
+export interface FeederReading {
+  timestamp: string;
+  load_kw: number;
+  temperature: number;
+  is_workday: boolean;
+  risk_label: number;
+}
+
+export interface FeederStateResponse {
+  feeder_id: string;
+  timestamp: string;
+  risk_level: number; // 0/1/2
+  current_load_kw: number;
+  forecast_load_kw: number;
+  message: string;
+  recent_history: FeederReading[];
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              Feeders overview                              */
+/* -------------------------------------------------------------------------- */
 
 /**
- * Hook to fetch active flexibility events.
- * Polls every 2.5 seconds as per SRS.
+ * Hook para listar feeders con estado agregado
+ * GET /feeders
  */
-export const useFlexEvents = () => {
-  const [events, setEvents] = useState<FlexEvent[]>([]);
+export const useFeederSummaries = () => {
+  const [feeders, setFeeders] = useState<FeederSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    const fetchEvents = async () => {
+    const fetchFeeders = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/events/active`);
-        if (!response.ok) throw new Error("Failed to fetch events");
+        const response = await fetch(`${API_BASE}/feeders`);
+        if (!response.ok) throw new Error("Failed to fetch feeders");
 
-        const data = await response.json();
+        const data = (await response.json()) as FeederSummary[];
         if (!isMounted) return;
 
-        setEvents((data.events ?? []) as FlexEvent[]);
+        setFeeders(data);
         setError(null);
       } catch (err) {
         if (!isMounted) return;
         setError(err instanceof Error ? err.message : "Unknown error");
-        console.error("Error fetching flex events:", err);
+        console.error("Error fetching feeders:", err);
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
 
-    fetchEvents();
-    const interval = setInterval(fetchEvents, 2500);
+    fetchFeeders();
+    const interval = setInterval(fetchFeeders, 2500); // 2.5s como en el SRS
 
     return () => {
       isMounted = false;
@@ -60,114 +103,19 @@ export const useFlexEvents = () => {
     };
   }, []);
 
-  return { events, isLoading, error };
+  return { feeders, isLoading, error };
 };
 
-/* ---------- DERs ---------- */
+/* -------------------------------------------------------------------------- */
+/*                               Feeder state                                 */
+/* -------------------------------------------------------------------------- */
 
 /**
- * Hook to fetch available DERs.
- * Polls every 5 seconds.
- */
-export const useDERs = () => {
-  const [ders, setDers] = useState<DERCardProps[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchDers = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`${API_BASE}/ders`);
-        if (!response.ok) throw new Error("Failed to fetch DERs");
-
-        const data = await response.json();
-        if (!isMounted) return;
-
-        setDers((data.ders ?? []) as DERCardProps[]);
-        setError(null);
-      } catch (err) {
-        if (!isMounted) return;
-        setError(err instanceof Error ? err.message : "Unknown error");
-        console.error("Error fetching DERs:", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    fetchDers();
-    const interval = setInterval(fetchDers, 5000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-  return { ders, isLoading, error };
-};
-
-/* ---------- Audit logs ---------- */
-
-/**
- * Hook to fetch audit logs.
- * Optional OBP ID filter.
- */
-export const useAuditLogs = (obpIdFilter?: string) => {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchLogs = async () => {
-      setIsLoading(true);
-      try {
-        const url = obpIdFilter
-          ? `${API_BASE}/audit/${obpIdFilter}`
-          : `${API_BASE}/audit`;
-
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch audit logs");
-
-        const data = await response.json();
-        if (!isMounted) return;
-
-        const normalized: AuditLog[] = Array.isArray(data) ? data : [data];
-        setLogs(normalized);
-        setError(null);
-      } catch (err) {
-        if (!isMounted) return;
-        setError(err instanceof Error ? err.message : "Unknown error");
-        console.error("Error fetching audit logs:", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    fetchLogs();
-    const interval = setInterval(fetchLogs, 5000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [obpIdFilter]);
-
-  return { logs, isLoading, error };
-};
-
-/* ---------- Feeder state ---------- */
-
-/**
- * Hook to fetch the current state of a feeder.
- * Polls every 2.5 seconds.
+ * Hook para el estado detallado de un feeder
+ * GET /feeders/{id}/state
  */
 export const useFeederState = (feederId: string | null) => {
-  const [state, setState] = useState<FeederState | null>(null);
+  const [state, setState] = useState<FeederStateResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -184,7 +132,7 @@ export const useFeederState = (feederId: string | null) => {
         );
         if (!response.ok) throw new Error("Failed to fetch feeder state");
 
-        const data = (await response.json()) as FeederState;
+        const data = (await response.json()) as FeederStateResponse;
         if (!isMounted) return;
 
         setState(data);
@@ -210,63 +158,143 @@ export const useFeederState = (feederId: string | null) => {
   return { state, isLoading, error };
 };
 
-/* ---------- Realtime events (WebSocket, future) ---------- */
+/* -------------------------------------------------------------------------- */
+/*                              Flex events (Beckn)                           */
+/* -------------------------------------------------------------------------- */
+
+const mapBackendEventToFlexEvent = (e: BackendEventDTO): FlexEvent => {
+  const normalizedStatus: FlexEvent["status"] = (() => {
+    if (e.status === "COMPLETE") return "COMPLETED";
+    if (e.status === "FAILED") return "FAILED";
+    return "ACTIVE"; // DISCOVER/SELECT/INIT/CONFIRM/STATUS => ACTIVE
+  })();
+
+  return {
+    id: e.event_id,
+    feederId: e.feeder_id,
+    feederName: `Feeder ${e.feeder_id}`,
+    status: normalizedStatus,
+    flexRequested: e.requested_kw,
+    flexDelivered: e.delivered_kw,
+    // timestamp fijo para evitar hydration issues
+    timestamp: "2025-11-22T10:00:00Z",
+    derCount: 3,
+    obpId: `OBP-${e.event_id}`,
+  };
+};
 
 /**
- * Hook for real-time events via WebSocket (future enhancement).
- * Linter-friendly: setState only inside async handlers, no setState in effect body.
+ * Hook para eventos activos de flexibilidad
+ * GET /events/active
  */
-export const useRealtimeEvents = () => {
+export const useFlexEvents = () => {
   const [events, setEvents] = useState<FlexEvent[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let ws: WebSocket | null = null;
+    let isMounted = true;
 
-    const WS_BASE =
-      process.env.NEXT_PUBLIC_WS_BASE ?? "ws://localhost:8000/ws/events";
-
-    ws = new WebSocket(WS_BASE);
-
-    ws.onopen = () => {
-      setIsConnected(true);
-      setError(null);
-      console.log("WebSocket connected");
-    };
-
-    ws.onmessage = (event) => {
+    const fetchEvents = async () => {
+      setIsLoading(true);
       try {
-        const data = JSON.parse(event.data);
-        setEvents((data.events ?? []) as FlexEvent[]);
+        const response = await fetch(`${API_BASE}/events/active`);
+        if (!response.ok) throw new Error("Failed to fetch events");
+
+        const data = (await response.json()) as BackendEventDTO[];
+        if (!isMounted) return;
+
+        setEvents(data.map(mapBackendEventToFlexEvent));
+        setError(null);
       } catch (err) {
-        console.error("Error parsing WebSocket message:", err);
+        if (!isMounted) return;
+        setError(err instanceof Error ? err.message : "Unknown error");
+        console.error("Error fetching flex events:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
 
-    ws.onerror = (event) => {
-      setError("WebSocket error");
-      setIsConnected(false);
-      console.error("WebSocket error:", event);
-    };
-
-    ws.onclose = () => {
-      setIsConnected(false);
-    };
+    fetchEvents();
+    const interval = setInterval(fetchEvents, 2500);
 
     return () => {
-      ws?.close();
+      isMounted = false;
+      clearInterval(interval);
     };
   }, []);
 
-  return { events, isConnected, error };
+  return { events, isLoading, error };
 };
 
-/* ---------- Beckn workflow progress (simulated) ---------- */
+/* -------------------------------------------------------------------------- */
+/*                               Audit (OBP trail)                            */
+/* -------------------------------------------------------------------------- */
+
+export interface SimpleAuditEntry {
+  ts: string;
+  message: string;
+}
+
+export interface SimpleAuditLog {
+  obpId: string;
+  entries: SimpleAuditEntry[];
+}
 
 /**
- * Hook to simulate Beckn workflow progress.
- * In production this would come from backend.
+ * Hook para leer el trail de un OBP concreto
+ * GET /audit/{obp_id}
+ */
+export const useAuditTrail = (obpId?: string) => {
+  const [log, setLog] = useState<SimpleAuditLog | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!obpId) return;
+
+    let isMounted = true;
+
+    const fetchLog = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${API_BASE}/audit/${obpId}`);
+        if (!response.ok) throw new Error("Failed to fetch audit log");
+
+        const data = (await response.json()) as BackendAuditDTO;
+        if (!isMounted) return;
+
+        setLog({
+          obpId: data.obp_id,
+          entries: data.entries,
+        });
+        setError(null);
+      } catch (err) {
+        if (!isMounted) return;
+        setError(err instanceof Error ? err.message : "Unknown error");
+        console.error("Error fetching audit log:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    fetchLog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [obpId]);
+
+  return { log, isLoading, error };
+};
+
+/* -------------------------------------------------------------------------- */
+/*                          Beckn workflow (simulado)                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Hook para simular el progreso Beckn en UI.
+ * En producción esto vendría del backend.
  */
 export const useBecknProgress = () => {
   const steps: BecknStep[] = [
@@ -307,11 +335,76 @@ export const useBecknProgress = () => {
   return { currentStep, timestamps, advanceStep, reset };
 };
 
-/* ---------- Generic retry helper ---------- */
+/* -------------------------------------------------------------------------- */
+/*                        WebSocket realtime (future)                         */
+/* -------------------------------------------------------------------------- */
 
-/**
- * Generic hook to execute an async function with retries and backoff.
- */
+export const useRealtimeEvents = () => {
+  const [events, setEvents] = useState<FlexEvent[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const WS_BASE =
+      process.env.NEXT_PUBLIC_WS_BASE ?? "ws://localhost:8000/ws/events";
+
+    let ws: WebSocket | null = null;
+    let isMounted = true;
+
+    try {
+      ws = new WebSocket(WS_BASE);
+
+      ws.onopen = () => {
+        if (!isMounted) return;
+        setIsConnected(true);
+        setError(null);
+        console.log("WebSocket connected");
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data) as { events?: FlexEvent[] };
+          if (!isMounted) return;
+          setEvents(data.events ?? []);
+        } catch (err) {
+          console.error("Error parsing WebSocket message:", err);
+        }
+      };
+
+      ws.onerror = (event) => {
+        if (!isMounted) return;
+        setError("WebSocket error");
+        setIsConnected(false);
+        console.error("WebSocket error:", event);
+      };
+
+      ws.onclose = () => {
+        if (!isMounted) return;
+        setIsConnected(false);
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      // Schedule state update to avoid synchronous setState inside effect
+      setTimeout(() => {
+        if (!isMounted) return;
+        setError(msg);
+      }, 0);
+      console.error("Error setting up WebSocket:", err);
+    }
+
+    return () => {
+      isMounted = false;
+      ws?.close();
+    };
+  }, []);
+
+  return { events, isConnected, error };
+};
+
+/* -------------------------------------------------------------------------- */
+/*                             Generic retry helper                           */
+/* -------------------------------------------------------------------------- */
+
 export const useRetry = <T>(fn: () => Promise<T>, maxRetries = 3) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

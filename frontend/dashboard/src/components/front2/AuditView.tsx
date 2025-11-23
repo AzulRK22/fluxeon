@@ -1,3 +1,4 @@
+// frontend/dashboard/src/components/front2/AuditView.tsx
 import React, { useState, useMemo } from "react";
 
 export interface AuditLog {
@@ -12,10 +13,16 @@ export interface AuditLog {
 }
 
 export interface AuditViewProps {
-  logs?: AuditLog[];
+  logs?: AuditLog[]; // <- se puede inyectar desde un futuro /audit
   isLoading?: boolean;
+  error?: string | null; // <- para mostrar errores de backend si los hay
 }
 
+/**
+ * Mock data for hackathon demo.
+ * In production this should be replaced by a real /audit endpoint
+ * that aggregates multiple OBP sessions.
+ */
 const MOCK_LOGS: AuditLog[] = [
   {
     obpId: "OBP-12345",
@@ -66,17 +73,21 @@ const STATUS_STYLES: Record<AuditLog["status"], string> = {
 };
 
 export const AuditView: React.FC<AuditViewProps> = ({
-  logs = MOCK_LOGS,
+  logs,
   isLoading = false,
+  error = null,
 }) => {
   const [searchOBP, setSearchOBP] = useState("");
 
+  // si no nos pasan logs desde back, usamos el mock
+  const effectiveLogs = logs && logs.length > 0 ? logs : MOCK_LOGS;
+
   const filteredLogs = useMemo(() => {
-    if (!searchOBP) return logs;
-    return logs.filter((log) =>
+    if (!searchOBP) return effectiveLogs;
+    return effectiveLogs.filter((log) =>
       log.obpId.toLowerCase().includes(searchOBP.toLowerCase())
     );
-  }, [logs, searchOBP]);
+  }, [effectiveLogs, searchOBP]);
 
   const handleExport = () => {
     const csv = [
@@ -125,11 +136,22 @@ export const AuditView: React.FC<AuditViewProps> = ({
               Audit logs / OBP trail
             </h3>
             <p className="text-[11px] text-slate-400">
-              One row per dispatch, with OBP ID for regulatory-grade
+              One row per flexibility dispatch. OBP IDs provide regulatory-grade
               traceability.
             </p>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Showing{" "}
+              <span className="font-semibold">{filteredLogs.length}</span>{" "}
+              record(s)
+            </p>
+            {error && (
+              <p className="text-[11px] text-red-400 mt-1">
+                Backend error: {error}
+              </p>
+            )}
           </div>
           <button
+            type="button"
             onClick={handleExport}
             className="self-start md:self-auto bg-slate-800 hover:bg-slate-700 text-slate-100 text-[11px] py-1.5 px-3 rounded-lg font-semibold transition-colors flex items-center gap-1"
           >
@@ -199,7 +221,7 @@ export const AuditView: React.FC<AuditViewProps> = ({
             ) : (
               filteredLogs.map((log) => (
                 <tr
-                  key={log.obpId + log.timestamp}
+                  key={`${log.obpId}-${log.timestamp}`}
                   className="hover:bg-slate-900/70 transition-colors"
                 >
                   <td className="px-4 py-2 text-slate-100 font-semibold">

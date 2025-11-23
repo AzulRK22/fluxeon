@@ -1,3 +1,4 @@
+// frontend/dashboard/src/app/front2/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -5,6 +6,11 @@ import { BecknTimeline } from "@/components/front2/BecknTimeline";
 import { EventsList, type FlexEvent } from "@/components/front2/EventsList";
 import { DERCard, type DERCardProps } from "@/components/front2/DERCard";
 import { AuditView } from "@/components/front2/AuditView";
+import {
+  useFlexEvents,
+  useBecknProgress,
+  useAuditTrail,
+} from "@/hooks/useFront2Hooks";
 
 const MOCK_DERS: DERCardProps[] = [
   {
@@ -69,37 +75,22 @@ const MOCK_DERS: DERCardProps[] = [
   },
 ];
 
-type BecknStep =
-  | "DISCOVER"
-  | "SELECT"
-  | "INIT"
-  | "CONFIRM"
-  | "STATUS"
-  | "COMPLETE";
-
 export default function Front2Page() {
   const [selectedEvent, setSelectedEvent] = useState<FlexEvent | null>(null);
-  const [currentBecknStep] = useState<BecknStep>("SELECT");
 
-  const becknTimestamps: Partial<Record<BecknStep, string>> = {
-    DISCOVER: "14:23:01",
-    SELECT: "14:23:02",
-    INIT: "14:23:03",
-  };
+  // 🔌 Datos reales desde backend
+  const { events, isLoading: eventsLoading } = useFlexEvents();
+
+  // 🔁 Progreso Beckn simulado (UI-only)
+  const { currentStep, timestamps } = useBecknProgress();
+
+  // 🧾 Audit trail real por OBP ID (cuando hay evento seleccionado)
+  const { log: auditLog, isLoading: auditLoading } = useAuditTrail(
+    selectedEvent?.obpId
+  );
 
   return (
     <div className="space-y-6">
-      {/* Section header */}
-      <section>
-        <h2 className="text-sm font-semibold text-slate-100">
-          Flexibility orchestration
-        </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Beckn workflow, DER allocation grid and audit trail for the selected
-          flexibility events.
-        </p>
-      </section>
-
       {/* Main Grid */}
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Left Column: Beckn Timeline + Events */}
@@ -114,10 +105,7 @@ export default function Front2Page() {
                 From DISCOVER to COMPLETE
               </span>
             </div>
-            <BecknTimeline
-              currentStep={currentBecknStep}
-              timestamps={becknTimestamps}
-            />
+            <BecknTimeline currentStep={currentStep} timestamps={timestamps} />
           </div>
 
           {/* Active Events */}
@@ -130,7 +118,11 @@ export default function Front2Page() {
                 Click an event to inspect its dispatch
               </span>
             </div>
-            <EventsList onEventClick={setSelectedEvent} />
+            <EventsList
+              events={events}
+              isLoading={eventsLoading}
+              onEventClick={setSelectedEvent}
+            />
           </div>
         </div>
 
@@ -214,13 +206,44 @@ export default function Front2Page() {
               % success).
             </p>
           </div>
+
+          {/* Mini audit trail real por OBP */}
+          {selectedEvent.obpId && (
+            <div className="mt-4 p-3 bg-slate-900/60 rounded-lg border border-slate-800">
+              <h4 className="text-xs font-semibold text-slate-200 mb-2">
+                OBP workflow (backend audit)
+              </h4>
+              {auditLoading && (
+                <p className="text-[11px] text-slate-400">Loading audit…</p>
+              )}
+              {!auditLoading && auditLog && (
+                <ul className="space-y-1 text-[11px] text-slate-300">
+                  {auditLog.entries.map((entry) => (
+                    <li
+                      key={entry.ts}
+                      className="flex gap-2 items-baseline text-xs"
+                    >
+                      <span className="text-slate-500 w-28 shrink-0">
+                        {new Date(entry.ts).toLocaleTimeString("en-GB", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </span>
+                      <span>{entry.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </section>
       )}
 
-      {/* Audit View */}
+      {/* Audit View (tabla agregada / mock) */}
       <section className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4">
         <h3 className="text-sm font-semibold text-slate-100 mb-3">
-          Audit trail
+          Audit trail (aggregated view)
         </h3>
         <AuditView />
       </section>

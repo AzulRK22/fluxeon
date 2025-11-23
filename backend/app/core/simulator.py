@@ -1,3 +1,4 @@
+# backend/app/core/simulator.py
 """
 This program simulates a Low Voltage (LV) Feeder in London (e.g., Islington area).
 Generates realistic daily load curves and injects random demand spikes.
