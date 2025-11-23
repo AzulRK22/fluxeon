@@ -12,3 +12,8 @@ frontend/dashboard/.swc/
 # OS / editor
 .DS_Store
 .vscode/
+# Node / Next.js
+node_modules/
+.next/
+.turbo/
+*.log

@@ -16,10 +16,14 @@ export default function CommandCentrePage() {
   const [selectedFeeder, setSelectedFeeder] = useState<Feeder | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchFeeders = async () => {
       try {
         const res = await fetch("http://localhost:8000/feeders");
         const data = await res.json();
+        if (!isMounted) return;
+
         setFeeders(data);
         if (!selectedFeeder && data.length > 0) {
           setSelectedFeeder(data[0]);
@@ -30,8 +34,12 @@ export default function CommandCentrePage() {
     };
 
     fetchFeeders();
-    const interval = setInterval(fetchFeeders, 3000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchFeeders, 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [selectedFeeder]);
 
   return (
@@ -47,7 +55,7 @@ export default function CommandCentrePage() {
         {selectedFeeder ? (
           <LoadChart feederId={selectedFeeder.id} />
         ) : (
-          <div className="border border-slate-800 rounded-2xl p-4 bg-slate-900/40 text-sm text-slate-400">
+          <div className="border border-slate-800 rounded-2xl p-4 bg-slate-950/70 text-sm text-slate-400">
             Select a feeder to inspect its load profile and risk.
           </div>
         )}

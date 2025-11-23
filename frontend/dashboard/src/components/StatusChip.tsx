@@ -9,9 +9,9 @@ const LABELS: Record<number, string> = {
 };
 
 const COLORS: Record<number, string> = {
-  0: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-  1: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-  2: "bg-red-500/20 text-red-300 border-red-500/40",
+  0: "bg-[#00E6981A] text-[#00E698] border-[#00E69833]",
+  1: "bg-[#FFC62E1A] text-[#FFC62E] border-[#FFC62E33]",
+  2: "bg-[#FF3B301A] text-[#FF3B30] border-[#FF3B3033]",
 };
 
 export default function StatusChip({ state }: Props) {
