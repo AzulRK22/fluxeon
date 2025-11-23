@@ -1,151 +1,171 @@
-FLUXEON – Hackathon Monorepo
+# FLUXEON – Hackathon Monorepo
 
-Grid-Scale Flexibility Orchestration using AI Agents + Beckn Protocol
+**Grid-Scale Flexibility Orchestration using AI Agents + Beckn-style Protocol**
 
-This repository contains both the FastAPI backend and the Next.js (Tailwind) frontend dashboard used for the FLUXEON Command Centre.
+FLUXEON is a demo Command Centre for DSOs.  
+It detects feeder overload risk and orchestrates flexibility from distributed energy resources (DERs) using:
 
-The repo is lightweight and optimized for rapid hackathon development (2–3 days).
-Everything below explains how to install, run, and collaborate.
+- A FastAPI backend (simulation + agent logic)
+- A Next.js + Tailwind dashboard (operator view)
+- A mock Beckn-inspired workflow (DISCOVER → SELECT → INIT → CONFIRM → STATUS → COMPLETE)
 
-🚀 Project Structure
-fluxeon/
-backend/
-app/
-api/
-feeders.py
-events.py
-audit.py
-core/
-simulator.py
-ts_pipeline.py
-agent_core.py
-beckn_client.py
-audit_log.py
-models/
-feeder.py
-der.py
-events.py
-audit.py
-main.py
-requirements.txt
-.venv/ <-- local virtual environment (not tracked)
+---
 
-frontend/
-dashboard/
-public/
-src/
-app/
-layout.tsx
-page.tsx
-components/
-FeederTable.tsx
-LoadChart.tsx
-StatusChip.tsx
-package.json
-next.config.ts
-tailwind + TS setup
+## 2. Tech Stack
 
-docs/
-SRS-FLUXEON.pdf
-BrandSheet-FLUXEON.pdf
+**Backend**
+- FastAPI  
+- Uvicorn  
+- Pydantic  
+- Simple time-series classifier (0 = Normal, 1 = Alert, 2 = Critical)  
+- Mock Beckn-inspired orchestration & audit trail  
 
-🧩 Tech Stack
-Backend
-• FastAPI
-• Uvicorn
-• Pydantic
-• Custom mock Beckn workflow (DISCOVER → SELECT → INIT → CONFIRM → STATUS → COMPLETE)
+**Frontend**
+- Next.js 15 (App Router)  
+- React + TypeScript  
+- Tailwind CSS  
+- Dark-mode Command Centre UI  
 
-Frontend
-• Next.js 15
-• React + TypeScript
-• Tailwind CSS
-• Responsive Command Centre UI
+---
 
-⚙️ Backend Setup (FastAPI)
-Run these commands only once when first setting up the environment.
+## 3. Backend Setup (FastAPI)
 
-1. Navigate to the backend folder
-   cd ...../.../fluxeon/backend
-2. Create the virtual environment
-   python3 -m venv .venv
-3. Activate the virtual environment
-   macOS/Linux: source .venv/bin/activate
-   Windows PowerShell: .venv\Scripts\Activate.ps1
-4. Install backend dependencies
-   pip install -r requirements.txt
-5. Run the backend server
-   uvicorn app.main:app --reload
+Run these commands **the first time** you set up the backend:
 
-The API will be available at:
-• http://127.0.0.1:8000/
-• Swagger docs: http://127.0.0.1:8000/docs
+```bash
+cd backend
 
-🔁 Daily Backend Workflow (every time you work on backend)
-cd /.../.../.../GitHub/fluxeon/backend
+# 1) create virtual environment
+python3 -m venv .venv
+
+# 2) activate environment
+source .venv/bin/activate      # macOS / Linux
+# .venv\Scripts\Activate.ps1   # Windows PowerShell
+
+# 3) install dependencies
+pip install -r requirements.txt
+
+# 4) run backend
+uvicorn app.main:app --reload
+```
+
+Backend endpoints:
+- http://127.0.0.1:8000/
+- Swagger UI: http://127.0.0.1:8000/docs
+
+---
+
+## 🔁 Daily Backend Workflow (every time you work on backend)
+
+```bash
+cd backend
 source .venv/bin/activate
 uvicorn app.main:app --reload
+```
 
-🌐 Frontend Setup (Next.js Dashboard)
-Only needed once per machine.
+---
 
-1. Navigate to the dashboard
-   cd /.../.../fluxeon/frontend/dashboard
-2. Install dependencies
-   npm install
-3. Run development server
-   npm run dev
+## 🌐 Frontend Setup (Next.js Dashboard)
+
+```bash
+cd frontend/dashboard
+
+# install dependencies (first time)
+npm install
+
+# run dev server
+npm run dev
+```
 
 Frontend runs at:
+
+```
 http://localhost:3000
+```
 
-⚠️ CORS is enabled by default
-The backend already includes:
+---
+
+## 🔗 Backend ↔ Frontend Integration (CORS)
+
+CORS is already enabled in `backend/app/main.py`:
+
+```python
 origins = [
-"http://localhost:3000",
-"http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
-This allows the Next.js dashboard to call:
-http://localhost:8000/feeders
-http://localhost:8000/events/active
-http://localhost:8000/audit/{id}
+```
 
-🧠 How to Select Python Interpreter in VS Code
+The frontend fetches from these endpoints:
 
-1. Open VS Code in the backend/ folder
-2. Press Cmd + Shift + P
-3. Select: Python: Select Interpreter
-4. Choose:
-   fluxeon/backend/.venv/bin/python
-   This fixes Pylance warnings like “import fastapi could not be resolved”.
+```
+GET http://localhost:8000/feeders
+GET http://localhost:8000/feeders/{id}/state
+GET http://localhost:8000/events/active
+GET http://localhost:8000/audit/{obp_id}
+```
 
-🧩 Development Notes
-• Always activate your venv before running backend.
-• If frontend shows CORS errors, restart backend (CORS already enabled).
-• If VS Code shows fastapi import errors, reselect the interpreter.
-• Backend is intentionally mock-based for rapid development.
+---
 
-🚀 Ready for Hackathon Demo
+## 🧠 VS Code – Python Interpreter Setup
 
-This repo is optimized for:
-• Fast iteration
-• Clean structure
-• Easy onboarding
-• Rapid visual progress in the dashboard
-• Plug-and-play backend mocks
+To avoid `import fastapi could not be resolved` warnings:
 
-If you have any issues running the project, check:
-• Backend running at 8000
-• Frontend running at 3000
-• Correct venv activation
-• Correct Python interpreter in VS Code
+1. Open the **backend** folder in VS Code.  
+2. Press `Cmd + Shift + P` → **Python: Select Interpreter**.  
+3. Choose:
 
-⸻
+```
+backend/.venv/bin/python
+```
 
-🏁 Contributors
-• Backend Engineer A
-• Backend Engineer B
-• Software Engineer : Azul Kuri
-• Frontend Engineer B
+4. Reload VS Code if needed.
 
-FLUXEON — Grid flexibility, orchestrated. ⚡💚
+---
+
+## 🧩 Frontend Components Overview
+
+- **FeederTable** – Overview of feeders with live state  
+- **StatusChip** – Green / Amber / Red indicator pills  
+- **LoadChart** – Displays load + threshold (chart-ready placeholder)  
+- More coming: Beckn timeline, DER card grid, audit view
+
+---
+
+## 👥 Contribution Workflow (Hackathon-friendly)
+
+1. Create your feature branch:
+
+```bash
+git checkout -b feature/my-change
+```
+
+2. Make edits (backend or frontend).
+
+3. Run locally:  
+   Backend → `uvicorn app.main:app --reload`  
+   Frontend → `npm run dev`
+
+4. Commit:
+
+```bash
+git add .
+git commit -m "feat: update dashboard UI"
+```
+
+5. Push:
+
+```bash
+git push origin feature/my-change
+```
+
+6. Open Pull Request.
+
+---
+
+## ⚡ Project Vision
+
+**FLUXEON**  
+A command-centre demo for DSOs to predict feeder overloads and orchestrate real-time flexibility via agentic workflows and Beckn-style interactions.
+
+*Grid flexibility, orchestrated.* ⚡💚
