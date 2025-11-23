@@ -56,7 +56,7 @@ class GridSimulator:
             load *= 1.1
         
         # 4. Add Grid Noise
-        load += np.random.normal(0, 25)
+        load += np.random.normal(0, 45) # Increased noise from 25 to 45
         
         # 5. Inject Random Peaks (Fault Simulation)
         if inject_spikes:
@@ -121,7 +121,7 @@ class GridSimulator:
                     i += 1
                     continue
                     
-                duration = 4 # 1 hour ramp
+                duration = np.random.randint(3, 7) # Variable duration: 3 to 6 intervals (45m - 1.5h)
                 
                 # Target Peak Load
                 if event_type == 'critical':
@@ -143,7 +143,7 @@ class GridSimulator:
                     current_target = start_load + (peak_load - start_load) * progress
                     
                     # Add randomness to the ramp so it's not perfectly linear
-                    noise = np.random.normal(0, 15)
+                    noise = np.random.normal(0, 35) # Increased ramp noise from 15 to 35
                     new_load = current_target + noise
                     
                     # Update DataFrame

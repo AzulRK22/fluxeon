@@ -108,7 +108,7 @@ def train_agent():
     
     # 5. Train Neural Network
     print("Training Dense Neural Network...") 
-    mlp = MLPClassifier(hidden_layer_sizes=(256, 128), max_iter=1500, random_state=42)
+    mlp = MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=1000, random_state=42)
     mlp.fit(X_train_scaled, y_train)
     
     # 6. Evaluation

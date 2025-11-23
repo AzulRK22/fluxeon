@@ -157,8 +157,8 @@ def train_agent():
     
     # 5. Train Neural Network
     print("\n[5/7] Training Dense Neural Network (MLP)...")
-    print("      Architecture: Input -> 256 neurons -> 128 neurons -> Output")
-    mlp = MLPClassifier(hidden_layer_sizes=(256, 128), max_iter=1500, random_state=42, verbose=True)
+    print("      Architecture: Input -> 64 neurons -> 32 neurons -> Output")
+    mlp = MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=1000, random_state=42, verbose=True)
     mlp.fit(X_train_scaled, y_train)
     print(f"      ✓ Training complete")
     
@@ -171,10 +171,15 @@ def train_agent():
     print("CLASSIFICATION REPORT")
     print("-"*70)
     # Specify all possible labels to handle cases where some classes are missing
-    print(classification_report(y_test, mlp.predict(X_test_scaled), 
+    report = classification_report(y_test, mlp.predict(X_test_scaled), 
                                 labels=[0, 1, 2],
                                 target_names=['Normal', 'Warning', 'Critical'],
-                                zero_division=0))
+                                zero_division=0)
+    print(report)
+    
+    # Save report to file for verification
+    with open("report.txt", "w") as f:
+        f.write(report)
     
     # 7. Save Artifacts
     print("[7/7] Saving model artifacts...")
