@@ -161,13 +161,28 @@ export const useFeederState = (feederId: string | null) => {
 /* -------------------------------------------------------------------------- */
 /*                              Flex events (Beckn)                           */
 /* -------------------------------------------------------------------------- */
+const BECKN_STEPS: BecknStep[] = [
+  "DISCOVER",
+  "SELECT",
+  "INIT",
+  "CONFIRM",
+  "STATUS",
+  "COMPLETE",
+];
 
 const mapBackendEventToFlexEvent = (e: BackendEventDTO): FlexEvent => {
+  // 1) Normalizamos el estado “visual” de la card
   const normalizedStatus: FlexEvent["status"] = (() => {
     if (e.status === "COMPLETE") return "COMPLETED";
     if (e.status === "FAILED") return "FAILED";
-    return "ACTIVE"; // DISCOVER/SELECT/INIT/CONFIRM/STATUS => ACTIVE
+    // DISCOVER/SELECT/INIT/CONFIRM/STATUS => ACTIVE
+    return "ACTIVE";
   })();
+
+  // 2) Intentamos interpretar el status del backend como BecknStep
+  const maybeBecknStep = BECKN_STEPS.includes(e.status as BecknStep)
+    ? (e.status as BecknStep)
+    : undefined;
 
   return {
     id: e.event_id,
@@ -176,10 +191,11 @@ const mapBackendEventToFlexEvent = (e: BackendEventDTO): FlexEvent => {
     status: normalizedStatus,
     flexRequested: e.requested_kw,
     flexDelivered: e.delivered_kw,
-    // timestamp fijo para evitar hydration issues
+    // Fijos para evitar problemas de SSR/hydration
     timestamp: "2025-11-22T10:00:00Z",
     derCount: 3,
     obpId: `OBP-${e.event_id}`,
+    becknStep: maybeBecknStep,
   };
 };
 

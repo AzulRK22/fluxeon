@@ -1,11 +1,15 @@
 // frontend/dashboard/src/app/front2/page.tsx
 "use client";
 
-import { useState } from "react";
-import { BecknTimeline } from "@/components/front2/BecknTimeline";
+import { useMemo, useState } from "react";
+import {
+  BecknTimeline,
+  type BecknStep,
+} from "@/components/front2/BecknTimeline";
 import { EventsList, type FlexEvent } from "@/components/front2/EventsList";
 import { DERCard, type DERCardProps } from "@/components/front2/DERCard";
 import { AuditView } from "@/components/front2/AuditView";
+import { useRouter } from "next/navigation";
 import {
   useFlexEvents,
   useBecknProgress,
@@ -76,13 +80,28 @@ const MOCK_DERS: DERCardProps[] = [
 ];
 
 export default function Front2Page() {
+  const router = useRouter();
   const [selectedEvent, setSelectedEvent] = useState<FlexEvent | null>(null);
 
   // 🔌 Datos reales desde backend
   const { events, isLoading: eventsLoading } = useFlexEvents();
 
   // 🔁 Progreso Beckn simulado (UI-only)
-  const { currentStep, timestamps } = useBecknProgress();
+  const { currentStep: simulatedStep, timestamps } = useBecknProgress();
+
+  // 🧠 Step “efectivo”: si el backend trae becknStep, usamos ese; si no, el simulado
+  const effectiveStep: BecknStep = useMemo(() => {
+    if (selectedEvent?.becknStep) {
+      return selectedEvent.becknStep;
+    }
+
+    const fromEvents = events.find((e) => e.becknStep);
+    if (fromEvents?.becknStep) {
+      return fromEvents.becknStep;
+    }
+
+    return simulatedStep;
+  }, [selectedEvent, events, simulatedStep]);
 
   // 🧾 Audit trail real por OBP ID (cuando hay evento seleccionado)
   const { log: auditLog, isLoading: auditLoading } = useAuditTrail(
@@ -97,25 +116,39 @@ export default function Front2Page() {
         <div className="xl:col-span-2 space-y-4">
           {/* Beckn Timeline */}
           <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-slate-100">
-                Beckn workflow
-              </h3>
-              <span className="text-[11px] text-slate-400">
-                From DISCOVER to COMPLETE
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-100">
+                  Beckn workflow
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  From DISCOVER to COMPLETE · End-to-end orchestration under 5s
+                  SLA (simulated).
+                </p>
+              </div>
+              <span className="text-[11px] text-slate-500">
+                OBP-based orchestration
               </span>
             </div>
-            <BecknTimeline currentStep={currentStep} timestamps={timestamps} />
+            <BecknTimeline
+              currentStep={effectiveStep}
+              timestamps={timestamps}
+            />
           </div>
 
           {/* Active Events */}
           <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-slate-100">
-                Flexibility events
-              </h3>
-              <span className="text-[11px] text-slate-400">
-                Click an event to inspect its dispatch
+              <div>
+                <h3 className="text-sm font-semibold text-slate-100">
+                  Flexibility events
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  Click an event to inspect its dispatch and audit trail.
+                </p>
+              </div>
+              <span className="text-[11px] text-slate-500">
+                {events.length} active from backend
               </span>
             </div>
             <EventsList
@@ -156,13 +189,35 @@ export default function Front2Page() {
               <p className="text-xs text-slate-400">
                 {selectedEvent.feederName} • {selectedEvent.id}
               </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Beckn step:{" "}
+                <span className="font-semibold">
+                  {selectedEvent.becknStep ?? "CONFIRM"}
+                </span>
+                .
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Backend audit: Beckn calls logged for {selectedEvent.obpId}.
+              </p>
             </div>
-            <button
-              onClick={() => setSelectedEvent(null)}
-              className="text-slate-400 hover:text-slate-200 text-sm transition-colors"
-            >
-              ✕
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                onClick={() =>
+                  router.push(
+                    `/?feeder=${encodeURIComponent(selectedEvent.feederId)}`
+                  )
+                }
+                className="text-[11px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
+              >
+                Open in overview
+              </button>
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="text-slate-400 hover:text-slate-200 text-sm transition-colors"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -210,9 +265,12 @@ export default function Front2Page() {
           {/* Mini audit trail real por OBP */}
           {selectedEvent.obpId && (
             <div className="mt-4 p-3 bg-slate-900/60 rounded-lg border border-slate-800">
-              <h4 className="text-xs font-semibold text-slate-200 mb-2">
+              <h4 className="text-xs font-semibold text-slate-200 mb-1.5">
                 OBP workflow (backend audit)
               </h4>
+              <p className="text-[11px] text-slate-400 mb-2">
+                Backend audit: Beckn calls logged for {selectedEvent.obpId}.
+              </p>
               {auditLoading && (
                 <p className="text-[11px] text-slate-400">Loading audit…</p>
               )}

@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import FeederTable, { Feeder } from "@/components/FeederTable";
 import LoadChart from "@/components/LoadChart";
+import { useSearchParams } from "next/navigation";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -13,6 +14,12 @@ export default function CommandCentrePage() {
   const [selectedFeeder, setSelectedFeeder] = useState<Feeder | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const feederFromUrl = searchParams.get("feeder");
+
+  // 👇 derivamos solo el id para usarlo en el efecto
+  const selectedFeederId = selectedFeeder?.id ?? null;
 
   useEffect(() => {
     let isMounted = true;
@@ -34,12 +41,26 @@ export default function CommandCentrePage() {
         setFeeders(data);
         setError(null);
 
-        // selección inteligente
-        if (!selectedFeeder && data.length > 0) {
-          setSelectedFeeder(data[0]);
-        } else if (selectedFeeder) {
-          const updated = data.find((f) => f.id === selectedFeeder.id);
-          if (updated) setSelectedFeeder(updated);
+        // 🧠 Selección inteligente con prioridad:
+        // 1) ?feeder=ID del URL
+        // 2) el que ya estaba seleccionado (por id)
+        // 3) el primero de la lista
+        let nextSelected: Feeder | null = null;
+
+        if (feederFromUrl) {
+          nextSelected = data.find((f) => f.id === feederFromUrl) ?? null;
+        }
+
+        if (!nextSelected && selectedFeederId) {
+          nextSelected = data.find((f) => f.id === selectedFeederId) ?? null;
+        }
+
+        if (!nextSelected && data.length > 0) {
+          nextSelected = data[0];
+        }
+
+        if (nextSelected) {
+          setSelectedFeeder(nextSelected);
         }
       } catch (err) {
         console.error("Error fetching feeders", err);
@@ -56,17 +77,14 @@ export default function CommandCentrePage() {
       }
     };
 
-    // Primera carga
     fetchFeeders();
-    // Polling cada 2.5s
     const interval = setInterval(fetchFeeders, 2500);
 
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFeeder?.id]);
+  }, [feederFromUrl, selectedFeederId]);
 
   const kpis = useMemo(() => {
     const total = feeders.length;

@@ -19,7 +19,6 @@ type HistoryPoint = {
   risk_label?: number;
 };
 
-// Unión “flexible” para soportar backend viejo y nuevo
 type FeederStateResponse = {
   // nueva versión AI
   feeder_id?: string;
@@ -51,6 +50,12 @@ type ChartPoint = {
   forecast?: number;
 };
 
+const RISK_LABELS: Record<number, string> = {
+  0: "Normal",
+  1: "Alert",
+  2: "Critical",
+};
+
 export default function LoadChart({ feederId }: Props) {
   const [data, setData] = useState<FeederStateResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -78,8 +83,6 @@ export default function LoadChart({ feederId }: Props) {
     };
 
     fetchState();
-
-    // Opcional: si quieres polling del estado
     const interval = setInterval(fetchState, 2500);
 
     return () => {
@@ -104,21 +107,25 @@ export default function LoadChart({ feederId }: Props) {
     );
   }
 
-  // 🔹 Normalizamos campos para que den igual backend viejo o nuevo
+  // --- Normalización de campos ---
   const feederLabel = data.feeder_id ?? data.id ?? feederId;
 
-  const liveLoad =
-    data.current_load_kw ?? // nuevo backend
-    data.load_kw ?? // viejo backend
-    null;
+  const liveLoad = data.current_load_kw ?? data.load_kw ?? null;
 
-  // Umbral: si el backend nuevo no lo manda, usamos el de la versión vieja o un fallback
-  const thresholdKw =
-    data.threshold_kw ??
-    // fallback aproximado: 85% de 1500 (config del simulador)
-    1500 * 0.85;
+  const thresholdKw = data.threshold_kw ?? 1500 * 0.85;
 
-  // Historial: usar recent_history (nuevo) o history_kw (viejo)
+  // Risk (nuevo: risk_level, fallback: state antiguo)
+  const rawRiskLevel =
+    typeof data.risk_level === "number"
+      ? data.risk_level
+      : typeof data.state === "number"
+      ? data.state
+      : null;
+
+  const riskLabel =
+    rawRiskLevel != null ? RISK_LABELS[rawRiskLevel] ?? "Unknown" : null;
+
+  // Historial / forecast igual que antes
   let historyPoints: ChartPoint[] = [];
 
   if (data.recent_history && data.recent_history.length > 0) {
@@ -141,7 +148,6 @@ export default function LoadChart({ feederId }: Props) {
       load: v,
     }));
   } else if (liveLoad != null) {
-    // fallback mínimo para que el chart no esté vacío
     historyPoints = [
       { idx: 0, label: "t-2", load: liveLoad - 20 },
       { idx: 1, label: "t-1", load: liveLoad - 10 },
@@ -149,7 +155,6 @@ export default function LoadChart({ feederId }: Props) {
     ];
   }
 
-  // Forecast: usamos forecast_load_kw (nuevo) o forecast_kw (viejo) o simple extrapolación
   let forecastPoints: ChartPoint[] = [];
 
   if (typeof data.forecast_load_kw === "number") {
@@ -181,17 +186,43 @@ export default function LoadChart({ feederId }: Props) {
     ];
   }
 
+  const lastUpdate =
+    data.timestamp != null
+      ? new Date(data.timestamp).toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      : null;
+
   const chartData: ChartPoint[] = [...historyPoints, ...forecastPoints];
 
   return (
     <div className="border border-slate-800 rounded-2xl bg-[#02091F] px-4 py-4 shadow-lg shadow-emerald-500/5">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold text-slate-100">
-          {feederLabel} — Load &amp; forecast
-        </h2>
-        <span className="text-[11px] text-slate-300">
-          Blue: actual · Cyan: forecast · Red: threshold
-        </span>
+        <div>
+          <h2 className="text-sm font-semibold text-slate-100">
+            {feederLabel} — Load &amp; forecast
+          </h2>
+          {riskLabel != null && (
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Risk level:{" "}
+              <span className="font-medium text-slate-100">
+                {rawRiskLevel} ({riskLabel})
+              </span>
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col items-end">
+          <span className="text-[11px] text-slate-300">
+            Blue: actual · Cyan: forecast · Red: threshold
+          </span>
+          {lastUpdate && (
+            <span className="text-[10px] text-slate-500">
+              Last update: {lastUpdate} UTC
+            </span>
+          )}
+        </div>
       </div>
 
       <p className="text-[11px] text-slate-400 mb-3">
@@ -251,6 +282,10 @@ export default function LoadChart({ feederId }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </div>
+      <p className="mt-3 text-[11px] text-slate-500">
+        AI model: MLP (3-class) · Trained on 60 days synthetic LV feeder history
+        · Test accuracy ≈ 99%.
+      </p>
     </div>
   );
 }

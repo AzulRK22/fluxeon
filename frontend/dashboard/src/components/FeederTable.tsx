@@ -36,6 +36,17 @@ export default function FeederTable({
   isLoading = false,
 }: Props) {
   const hasFeeders = feeders.length > 0;
+  const hasTemperature = feeders.some(
+    (f) => typeof f.temperature === "number" && !Number.isNaN(f.temperature)
+  );
+
+  const columnCount = 4 + (hasTemperature ? 1 : 0);
+
+  // Ordenamos: primero por riesgo (2→1→0), luego por load_kw descendente
+  const sortedFeeders = [...feeders].sort((a, b) => {
+    if (a.state !== b.state) return b.state - a.state;
+    return (b.load_kw ?? 0) - (a.load_kw ?? 0);
+  });
 
   return (
     <div className="border border-slate-800 rounded-2xl bg-[#02091F] px-4 py-4 shadow-lg shadow-emerald-500/5">
@@ -46,7 +57,11 @@ export default function FeederTable({
             Feeders overview
           </h2>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Live risk from AI model · {feeders.length} feeder(s)
+            Live risk from AI model · {feeders.length} feeder
+            {feeders.length === 1 ? "" : "s"}
+            {isLoading && (
+              <span className="ml-1 text-sky-400">• updating…</span>
+            )}
           </p>
         </div>
         <span className="text-[11px] text-slate-500">
@@ -60,15 +75,19 @@ export default function FeederTable({
             <tr>
               <th className="text-left py-2 px-3">Feeder</th>
               <th className="text-left py-2 px-3">Load (kW)</th>
+              {hasTemperature && (
+                <th className="text-left py-2 px-3">Temp (°C)</th>
+              )}
               <th className="text-left py-2 px-3">State</th>
               <th className="text-left py-2 px-3">Risk</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/80">
-            {isLoading && (
+            {/* Estado inicial: sin datos todavía */}
+            {isLoading && !hasFeeders && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={columnCount}
                   className="py-4 px-3 text-center text-xs text-slate-500"
                 >
                   Pulling live feeders from backend…
@@ -76,13 +95,19 @@ export default function FeederTable({
               </tr>
             )}
 
+            {/* Filas de feeders */}
             {!isLoading &&
               hasFeeders &&
-              feeders.map((f) => {
+              sortedFeeders.map((f) => {
                 const isSelected = f.id === selectedFeederId;
                 const loadText = Number.isFinite(f.load_kw)
                   ? f.load_kw.toFixed(1)
                   : "–";
+                const tempText =
+                  typeof f.temperature === "number" &&
+                  !Number.isNaN(f.temperature)
+                    ? `${f.temperature.toFixed(1)}`
+                    : "–";
 
                 return (
                   <tr
@@ -96,6 +121,9 @@ export default function FeederTable({
                   >
                     <td className="py-2.5 px-3 text-slate-100">{f.name}</td>
                     <td className="py-2.5 px-3 text-slate-100">{loadText}</td>
+                    {hasTemperature && (
+                      <td className="py-2.5 px-3 text-slate-100">{tempText}</td>
+                    )}
                     <td className="py-2.5 px-3">
                       <StatusChip state={f.state} />
                     </td>
@@ -106,10 +134,11 @@ export default function FeederTable({
                 );
               })}
 
+            {/* Sin feeders después de intentar cargar */}
             {!isLoading && !hasFeeders && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={columnCount}
                   className="py-4 px-3 text-center text-xs text-slate-500"
                 >
                   Waiting for feeders from backend…

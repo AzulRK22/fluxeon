@@ -1,5 +1,6 @@
 // frontend/dashboard/src/components/front2/EventsList.tsx
 import React from "react";
+import type { BecknStep } from "./BecknTimeline";
 
 export interface FlexEvent {
   id: string;
@@ -8,12 +9,15 @@ export interface FlexEvent {
   status: "ACTIVE" | "COMPLETED" | "FAILED";
   flexRequested: number; // kW
   flexDelivered: number; // kW
-  timestamp: string; // ISO string from backend
+  timestamp: string;
   derCount: number;
   obpId: string;
+
+  /** Beckn step real reportado por backend: DISCOVER/SELECT/INIT/CONFIRM/STATUS/COMPLETE */
+  becknStep?: BecknStep;
 }
 
-export interface EventsListProps {
+interface EventsListProps {
   events?: FlexEvent[];
   isLoading?: boolean;
   onEventClick?: (event: FlexEvent) => void;
@@ -25,7 +29,6 @@ const STATUS_BADGE: Record<FlexEvent["status"], string> = {
   FAILED: "bg-red-500/15 text-red-300 border border-red-500/60",
 };
 
-// Fallback mock data if backend is not wired yet
 const MOCK_EVENTS: FlexEvent[] = [
   {
     id: "EVT-001",
@@ -34,9 +37,10 @@ const MOCK_EVENTS: FlexEvent[] = [
     status: "ACTIVE",
     flexRequested: 45,
     flexDelivered: 42,
-    timestamp: new Date("2025-11-22T14:23:00Z").toISOString(),
+    timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
     derCount: 3,
     obpId: "OBP-12345",
+    becknStep: "CONFIRM",
   },
   {
     id: "EVT-002",
@@ -45,9 +49,10 @@ const MOCK_EVENTS: FlexEvent[] = [
     status: "COMPLETED",
     flexRequested: 60,
     flexDelivered: 58,
-    timestamp: new Date("2025-11-22T14:00:00Z").toISOString(),
+    timestamp: new Date(Date.now() - 25 * 60000).toISOString(),
     derCount: 5,
     obpId: "OBP-12346",
+    becknStep: "COMPLETE",
   },
   {
     id: "EVT-003",
@@ -56,32 +61,32 @@ const MOCK_EVENTS: FlexEvent[] = [
     status: "ACTIVE",
     flexRequested: 30,
     flexDelivered: 28,
-    timestamp: new Date("2025-11-22T14:15:00Z").toISOString(),
+    timestamp: new Date(Date.now() - 10 * 60000).toISOString(),
     derCount: 2,
     obpId: "OBP-12347",
+    becknStep: "STATUS",
   },
 ];
-
-const formatTime = (isoString: string) => {
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) return "—";
-  // Stable, no depende de "ahora" → sin problemas de hidratación
-  return date.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const successRate = (requested: number, delivered: number) => {
-  if (!requested) return 0;
-  return Math.round((delivered / requested) * 100);
-};
 
 export const EventsList: React.FC<EventsListProps> = ({
   events = MOCK_EVENTS,
   isLoading = false,
   onEventClick,
 }) => {
+  const formatTime = (isoString: string) => {
+    const date = new Date(isoString);
+    // Hora consistente server/cliente (no depende de "ahora")
+    return date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const successRate = (requested: number, delivered: number) => {
+    if (!requested) return 0;
+    return Math.round((delivered / requested) * 100);
+  };
+
   if (isLoading) {
     return (
       <div className="py-6 text-center text-sm text-slate-400">
@@ -90,7 +95,7 @@ export const EventsList: React.FC<EventsListProps> = ({
     );
   }
 
-  if (!events.length) {
+  if (events.length === 0) {
     return (
       <div className="py-6 text-center text-sm text-slate-400">
         No active events
@@ -113,7 +118,14 @@ export const EventsList: React.FC<EventsListProps> = ({
               <h4 className="text-sm font-semibold text-slate-100 leading-snug">
                 {event.feederName}
               </h4>
-              <p className="text-[11px] text-slate-500">{event.id}</p>
+              <p className="text-[11px] text-slate-500">
+                {event.id}
+                {event.becknStep && (
+                  <span className="ml-1 text-[10px] text-slate-400">
+                    · Beckn: {event.becknStep}
+                  </span>
+                )}
+              </p>
             </div>
             <span
               className={[

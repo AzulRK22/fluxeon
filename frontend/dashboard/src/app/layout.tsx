@@ -4,6 +4,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import Image from "next/image";
+import BackendStatusBadge from "@/components/BackendStatusBadge";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -75,9 +76,8 @@ export default function RootLayout({
 
             {/* Status / meta info */}
             <div className="flex flex-col items-end gap-1 text-[11px] text-slate-400">
-              <div className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Backend: online</span>
+              <div className="hidden sm:flex items-center gap-2">
+                <BackendStatusBadge />
               </div>
               <span className="hidden md:inline-flex px-2 py-0.5 rounded-full border border-slate-700 bg-slate-900/70 text-[10px] uppercase tracking-wide">
                 Hackathon demo · FLUXEON v0.1
