@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .api import feeders, events, audit
+from .api.beckn import routes as beckn_routes
 
 app = FastAPI(title="FLUXEON Backend", version="0.1.0")
 
@@ -21,6 +22,8 @@ app.add_middleware(
 app.include_router(feeders.router, prefix="/feeders", tags=["feeders"])
 app.include_router(events.router, prefix="/events", tags=["events"])
 app.include_router(audit.router, prefix="/audit", tags=["audit"])
+app.include_router(beckn_routes.router, prefix="/beckn/callbacks", tags=["beckn"])
+
 
 
 @app.get("/")

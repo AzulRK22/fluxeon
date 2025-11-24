@@ -119,6 +119,8 @@ export const AuditView: React.FC<AuditViewProps> = ({
           <tbody className="divide-y divide-slate-800 bg-[#02091F]">
             {rows.map((row) => (
               <tr key={`${row.obpId}-${row.ts}-${row.message.slice(0, 16)}`}>
+                {/* TODO: DEMO METRICS - OBP ID displayed here comes from backend on_confirm callback */}
+                {/* This is the critical P444 audit trail identifier */}
                 <td className="px-3 py-2 text-slate-100 font-mono text-[10px]">
                   {row.obpId}
                 </td>

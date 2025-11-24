@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # Redis - Required by Beckn-ONIX for caching
+  redis:
+    image: redis:alpine
+    container_name: fluxeon-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - fluxeon-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Beckn-ONIX Adapter - Protocol middleware
+  beckn-onix:
+    build:
+      context: ./beckn-home/beckn-onix-main
+      dockerfile: Dockerfile.adapter-with-plugins
+    container_name: fluxeon-beckn-onix
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./beckn-home/beckn-onix-main/config:/app/config
+      - ./beckn-home/beckn-onix-main/schemas:/app/schemas
+      - ./beckn-home/beckn-onix-main/plugins:/app/plugins
+    environment:
+      - CONFIG_FILE=/app/config/fluxeon-bap.yaml
+      # Beckn Credentials (optional - uses defaults if not set)
+      - BECKN_SUBSCRIBER_ID=${BECKN_SUBSCRIBER_ID:-}
+      - BECKN_KEY_ID=${BECKN_KEY_ID:-}
+      - BECKN_SIGNING_PRIVATE_KEY=${BECKN_SIGNING_PRIVATE_KEY:-}
+      - BECKN_SIGNING_PUBLIC_KEY=${BECKN_SIGNING_PUBLIC_KEY:-}
+      - BECKN_ENCRYPTION_PRIVATE_KEY=${BECKN_ENCRYPTION_PRIVATE_KEY:-}
+      - BECKN_ENCRYPTION_PUBLIC_KEY=${BECKN_ENCRYPTION_PUBLIC_KEY:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - fluxeon-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # FLUXEON Backend - Python FastAPI
+  fluxeon-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fluxeon-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - BECKN_ONIX_URL=http://beckn-onix:8081
+      - DEBUG=true
+    env_file:
+      - .env
+    depends_on:
+      beckn-onix:
+        condition: service_healthy
+    networks:
+      - fluxeon-network
+
+networks:
+  fluxeon-network:
+    driver: bridge

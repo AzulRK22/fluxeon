@@ -124,6 +124,8 @@ export const BecknTimeline: React.FC<BecknTimelineProps> = ({
                 >
                   {step}
                 </p>
+                {/* TODO: DEMO METRICS - Timestamps displayed here come from backend callbacks */}
+                {/* For demo, can inject specific values like "T+0ms", "T+120ms", "T+250ms", "T+345ms" */}
                 {ts && (
                   <p className="text-[10px] text-slate-500 mt-0.5">{ts}</p>
                 )}
