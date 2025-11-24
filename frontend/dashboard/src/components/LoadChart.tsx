@@ -19,6 +19,7 @@ type HistoryPoint = {
   risk_label?: number;
 };
 
+// Unión “flexible” para soportar backend viejo y nuevo
 type FeederStateResponse = {
   // nueva versión AI
   feeder_id?: string;
@@ -56,6 +57,9 @@ const RISK_LABELS: Record<number, string> = {
   2: "Critical",
 };
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
 export default function LoadChart({ feederId }: Props) {
   const [data, setData] = useState<FeederStateResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +70,8 @@ export default function LoadChart({ feederId }: Props) {
     const fetchState = async () => {
       try {
         const res = await fetch(
-          `http://localhost:8000/feeders/${feederId}/state`
+          `${API_BASE_URL}/feeders/${encodeURIComponent(feederId)}/state`,
+          { cache: "no-store" }
         );
         if (!res.ok) throw new Error("Failed to fetch feeder state");
         const json: FeederStateResponse = await res.json();
@@ -93,7 +98,7 @@ export default function LoadChart({ feederId }: Props) {
 
   if (error) {
     return (
-      <div className="border border-slate-800 rounded-2xl bg-[#02081A] px-4 py-4">
+      <div className="border border-slate-800 rounded-2xl bg-[#02081A] px-4 py-4 h-full flex items-center">
         <p className="text-sm text-red-400">{error}</p>
       </div>
     );
@@ -101,7 +106,7 @@ export default function LoadChart({ feederId }: Props) {
 
   if (!data) {
     return (
-      <div className="border border-slate-800 rounded-2xl bg-[#02081A] px-4 py-4">
+      <div className="border border-slate-800 rounded-2xl bg-[#02081A] px-4 py-4 h-full flex items-center">
         <p className="text-sm text-slate-400">Loading feeder data…</p>
       </div>
     );
@@ -125,7 +130,7 @@ export default function LoadChart({ feederId }: Props) {
   const riskLabel =
     rawRiskLevel != null ? RISK_LABELS[rawRiskLevel] ?? "Unknown" : null;
 
-  // Historial / forecast igual que antes
+  // Historial / forecast
   let historyPoints: ChartPoint[] = [];
 
   if (data.recent_history && data.recent_history.length > 0) {
@@ -198,7 +203,7 @@ export default function LoadChart({ feederId }: Props) {
   const chartData: ChartPoint[] = [...historyPoints, ...forecastPoints];
 
   return (
-    <div className="border border-slate-800 rounded-2xl bg-[#02091F] px-4 py-4 shadow-lg shadow-emerald-500/5">
+    <div className="border border-slate-800 rounded-2xl bg-[#02091F] px-4 py-4 shadow-lg shadow-emerald-500/5 h-full flex flex-col">
       <div className="flex items-center justify-between mb-2">
         <div>
           <h2 className="text-sm font-semibold text-slate-100">
@@ -236,7 +241,8 @@ export default function LoadChart({ feederId }: Props) {
         </span>
       </p>
 
-      <div className="h-64">
+      {/* El chart ocupa todo el espacio vertical disponible y se alinea con el alto de la columna */}
+      <div className="flex-1 min-h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
             <XAxis
@@ -282,6 +288,7 @@ export default function LoadChart({ feederId }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </div>
+
       <p className="mt-3 text-[11px] text-slate-500">
         AI model: MLP (3-class) · Trained on 60 days synthetic LV feeder history
         · Test accuracy ≈ 99%.

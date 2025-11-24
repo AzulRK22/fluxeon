@@ -35,7 +35,7 @@ export interface FeederSummary {
   name: string;
   state: number; // 0: Normal, 1: Warning, 2: Critical
   load_kw: number;
-  temperature: number;
+  temperature?: number;
 }
 
 /* ----------------------------- Feeder state v2 ----------------------------- */
@@ -43,19 +43,35 @@ export interface FeederSummary {
 export interface FeederReading {
   timestamp: string;
   load_kw: number;
-  temperature: number;
-  is_workday: boolean;
-  risk_label: number;
+  temperature?: number;
+  is_workday?: boolean;
+  risk_label?: number;
 }
 
+/**
+ * Estado detallado de un feeder.
+ * Lo definimos como unión “flexible” para soportar backend nuevo (AI)
+ * y backend antiguo (simple) sin romper el tipado en LoadChart/Dashboard.
+ */
 export interface FeederStateResponse {
-  feeder_id: string;
-  timestamp: string;
-  risk_level: number; // 0/1/2
-  current_load_kw: number;
-  forecast_load_kw: number;
-  message: string;
-  recent_history: FeederReading[];
+  // Versión nueva AI
+  feeder_id?: string;
+  timestamp?: string;
+  risk_level?: number; // 0/1/2
+  current_load_kw?: number;
+  forecast_load_kw?: number;
+  message?: string;
+  recent_history?: FeederReading[];
+
+  // Versión antigua simple / simulador
+  id?: string;
+  state?: number;
+  load_kw?: number;
+  threshold_kw?: number;
+  critical_threshold_kw?: number;
+  history_kw?: number[];
+  forecast_kw?: number[];
+  temperature?: number;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -77,7 +93,9 @@ export const useFeederSummaries = () => {
     const fetchFeeders = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/feeders`);
+        const response = await fetch(`${API_BASE}/feeders`, {
+          cache: "no-store",
+        });
         if (!response.ok) throw new Error("Failed to fetch feeders");
 
         const data = (await response.json()) as FeederSummary[];
@@ -120,7 +138,11 @@ export const useFeederState = (feederId: string | null) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!feederId) return;
+    if (!feederId) {
+      setState(null);
+      setError(null);
+      return;
+    }
 
     let isMounted = true;
 
@@ -128,7 +150,8 @@ export const useFeederState = (feederId: string | null) => {
       setIsLoading(true);
       try {
         const response = await fetch(
-          `${API_BASE}/feeders/${encodeURIComponent(feederId)}/state`
+          `${API_BASE}/feeders/${encodeURIComponent(feederId)}/state`,
+          { cache: "no-store" }
         );
         if (!response.ok) throw new Error("Failed to fetch feeder state");
 
@@ -161,6 +184,7 @@ export const useFeederState = (feederId: string | null) => {
 /* -------------------------------------------------------------------------- */
 /*                              Flex events (Beckn)                           */
 /* -------------------------------------------------------------------------- */
+
 const BECKN_STEPS: BecknStep[] = [
   "DISCOVER",
   "SELECT",
@@ -214,7 +238,9 @@ export const useFlexEvents = () => {
     const fetchEvents = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/events/active`);
+        const response = await fetch(`${API_BASE}/events/active`, {
+          cache: "no-store",
+        });
         if (!response.ok) throw new Error("Failed to fetch events");
 
         const data = (await response.json()) as BackendEventDTO[];
@@ -267,14 +293,21 @@ export const useAuditTrail = (obpId?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!obpId) return;
+    if (!obpId) {
+      setLog(null);
+      setError(null);
+      return;
+    }
 
     let isMounted = true;
 
     const fetchLog = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${API_BASE}/audit/${obpId}`);
+        const response = await fetch(
+          `${API_BASE}/audit/${encodeURIComponent(obpId)}`,
+          { cache: "no-store" }
+        );
         if (!response.ok) throw new Error("Failed to fetch audit log");
 
         const data = (await response.json()) as BackendAuditDTO;

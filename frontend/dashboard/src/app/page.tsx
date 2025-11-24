@@ -1,10 +1,9 @@
-// frontend/dashboard/src/app/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import FeederTable, { Feeder } from "@/components/FeederTable";
 import LoadChart from "@/components/LoadChart";
-import { useSearchParams } from "next/navigation";
+import FeederDetailDrawer from "@/components/FeederDetailDrawer";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -15,12 +14,7 @@ export default function CommandCentrePage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const searchParams = useSearchParams();
-  const feederFromUrl = searchParams.get("feeder");
-
-  // 👇 derivamos solo el id para usarlo en el efecto
-  const selectedFeederId = selectedFeeder?.id ?? null;
-
+  // 🔁 Polling de feeders (no depende del feeder seleccionado)
   useEffect(() => {
     let isMounted = true;
 
@@ -40,28 +34,6 @@ export default function CommandCentrePage() {
 
         setFeeders(data);
         setError(null);
-
-        // 🧠 Selección inteligente con prioridad:
-        // 1) ?feeder=ID del URL
-        // 2) el que ya estaba seleccionado (por id)
-        // 3) el primero de la lista
-        let nextSelected: Feeder | null = null;
-
-        if (feederFromUrl) {
-          nextSelected = data.find((f) => f.id === feederFromUrl) ?? null;
-        }
-
-        if (!nextSelected && selectedFeederId) {
-          nextSelected = data.find((f) => f.id === selectedFeederId) ?? null;
-        }
-
-        if (!nextSelected && data.length > 0) {
-          nextSelected = data[0];
-        }
-
-        if (nextSelected) {
-          setSelectedFeeder(nextSelected);
-        }
       } catch (err) {
         console.error("Error fetching feeders", err);
         if (!isMounted) return;
@@ -84,7 +56,22 @@ export default function CommandCentrePage() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [feederFromUrl, selectedFeederId]);
+  }, []);
+
+  // 🎯 Selección inteligente del feeder cuando cambian los datos
+  // Usamos el updater de estado, así solo dependemos de `feeders`
+  useEffect(() => {
+    setSelectedFeeder((prev) => {
+      if (feeders.length === 0) return null;
+
+      // Si no había seleccionado, tomamos el primero
+      if (!prev) return feeders[0];
+
+      // Intentamos mantener el mismo feeder si sigue existiendo
+      const updated = feeders.find((f) => f.id === prev.id);
+      return updated ?? feeders[0];
+    });
+  }, [feeders]);
 
   const kpis = useMemo(() => {
     const total = feeders.length;
@@ -100,6 +87,19 @@ export default function CommandCentrePage() {
 
   return (
     <>
+      {/* Header info strip */}
+      <section className="mb-2 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+        <p className="text-[11px] text-slate-400">
+          Live LV feeder snapshot · AI-powered risk classification for each
+          feeder.
+        </p>
+        <p className="text-[11px] text-slate-500">
+          Data refresh every{" "}
+          <span className="font-semibold text-slate-200">2.5s</span> · All
+          timestamps in <span className="font-mono">UTC</span>.
+        </p>
+      </section>
+
       {/* KPI strip */}
       <section className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         <div className="rounded-2xl border border-slate-800 bg-[#02091F] px-4 py-3 flex flex-col justify-between">
@@ -153,21 +153,30 @@ export default function CommandCentrePage() {
       )}
 
       {/* Main grid */}
-      <section className="grid grid-cols-12 gap-4 mt-4">
-        <div className="col-span-12 lg:col-span-5">
+      <section className="grid grid-cols-12 gap-4 mt-4 items-stretch">
+        {/* Columna izquierda */}
+        <div className="col-span-12 lg:col-span-5 flex flex-col gap-3">
           <FeederTable
             feeders={feeders}
             selectedFeederId={selectedFeeder?.id ?? null}
             onSelect={(feeder) => setSelectedFeeder(feeder)}
             isLoading={isLoading}
           />
+
+          {selectedFeeder && (
+            <FeederDetailDrawer
+              feeder={selectedFeeder}
+              onClose={() => setSelectedFeeder(null)}
+            />
+          )}
         </div>
 
+        {/* Columna derecha */}
         <div className="col-span-12 lg:col-span-7">
           {selectedFeeder ? (
             <LoadChart feederId={selectedFeeder.id} />
           ) : (
-            <div className="border border-slate-800 rounded-2xl bg-[#02081A] px-4 py-6 text-sm text-slate-400">
+            <div className="border border-slate-800 rounded-2xl bg-[#02081A] px-4 py-6 text-sm text-slate-400 h-full flex items-center">
               Select a feeder on the left to inspect its AI-predicted risk and
               load forecast.
             </div>
