@@ -1,3 +1,4 @@
+// frontend/dashboard/src/app/front2/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -78,6 +79,15 @@ const MOCK_DERS: DERCardProps[] = [
   },
 ];
 
+const ORDERED_BECKN_STEPS: BecknStep[] = [
+  "DISCOVER",
+  "SELECT",
+  "INIT",
+  "CONFIRM",
+  "STATUS",
+  "COMPLETE",
+];
+
 export default function Front2Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,7 +99,12 @@ export default function Front2Page() {
   const { events, isLoading: eventsLoading } = useFlexEvents();
 
   // 🔁 Progreso Beckn simulado (UI-only)
-  const { currentStep: simulatedStep, timestamps } = useBecknProgress();
+  const {
+    currentStep: simulatedStep,
+    timestamps,
+    advanceStep,
+    reset,
+  } = useBecknProgress();
 
   // 🧠 Step “efectivo”: si el backend trae becknStep, usamos ese; si no, el simulado
   const effectiveStep: BecknStep = useMemo(() => {
@@ -113,7 +128,6 @@ export default function Front2Page() {
     if (!urlFeederId || events.length === 0) return;
 
     const candidate: FlexEvent | null = (() => {
-      // Si ya hay uno seleccionado del mismo feeder, lo mantenemos
       if (selectedEvent && selectedEvent.feederId === urlFeederId) {
         return selectedEvent;
       }
@@ -121,17 +135,24 @@ export default function Front2Page() {
       const match = events.find((e) => e.feederId === urlFeederId);
       if (match) return match;
 
-      // Fallback: si no hay match pero sí eventos, dejamos el actual o el primero
       return selectedEvent ?? events[0];
     })();
 
-    // Para contentar al lint (no setState sync en el cuerpo del effect)
     const timeout = setTimeout(() => {
       setSelectedEvent(candidate);
     }, 0);
 
     return () => clearTimeout(timeout);
   }, [urlFeederId, events, selectedEvent]);
+
+  // 🔍 Remaining steps para el evento seleccionado
+  let remainingSteps: number | null = null;
+  if (selectedEvent?.becknStep) {
+    const idx = ORDERED_BECKN_STEPS.indexOf(selectedEvent.becknStep);
+    if (idx !== -1) {
+      remainingSteps = Math.max(0, ORDERED_BECKN_STEPS.length - 1 - idx);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -158,6 +179,9 @@ export default function Front2Page() {
             <BecknTimeline
               currentStep={effectiveStep}
               timestamps={timestamps}
+              showControls
+              onAdvance={advanceStep}
+              onReset={reset}
             />
           </div>
 
@@ -246,6 +270,21 @@ export default function Front2Page() {
               <p className="text-base font-semibold text-blue-400 mt-1">
                 {selectedEvent.status}
               </p>
+              {selectedEvent.becknStep && (
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Beckn step:{" "}
+                  <span className="font-medium text-slate-100">
+                    {selectedEvent.becknStep}
+                  </span>
+                  {remainingSteps !== null && (
+                    <>
+                      {" "}
+                      · est. remaining: {remainingSteps} step
+                      {remainingSteps === 1 ? "" : "s"}
+                    </>
+                  )}
+                </p>
+              )}
             </div>
             <div>
               <span className="text-[11px] text-slate-400">Flex requested</span>

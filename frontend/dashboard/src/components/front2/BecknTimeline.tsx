@@ -1,93 +1,137 @@
 // frontend/dashboard/src/components/front2/BecknTimeline.tsx
+"use client";
+
 import React from "react";
 
-export const BECKN_STEPS = [
+export type BecknStep =
+  | "DISCOVER"
+  | "SELECT"
+  | "INIT"
+  | "CONFIRM"
+  | "STATUS"
+  | "COMPLETE";
+
+const STEPS: BecknStep[] = [
   "DISCOVER",
   "SELECT",
   "INIT",
   "CONFIRM",
   "STATUS",
   "COMPLETE",
-] as const;
-
-export type BecknStep = (typeof BECKN_STEPS)[number];
+];
 
 interface BecknTimelineProps {
   currentStep: BecknStep;
-  /**
-   * Optional timestamps per step, e.g.:
-   * { DISCOVER: "14:23:01", SELECT: "14:23:02", ... }
-   */
-  timestamps?: Partial<Record<BecknStep, string>>;
+  timestamps: Partial<Record<BecknStep, string>>;
+
+  /** Fase 2: controles opcionales de simulación */
+  showControls?: boolean;
+  onAdvance?: () => void;
+  onReset?: () => void;
 }
 
 export const BecknTimeline: React.FC<BecknTimelineProps> = ({
   currentStep,
-  timestamps = {},
+  timestamps,
+  showControls = false,
+  onAdvance,
+  onReset,
 }) => {
-  const currentIndex = BECKN_STEPS.indexOf(currentStep);
+  const currentIndex = STEPS.indexOf(currentStep);
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Horizontal timeline */}
-      <div className="flex items-center justify-between gap-2">
-        {BECKN_STEPS.map((step, index) => {
-          const isCompleted = index < currentIndex;
-          const isCurrent = index === currentIndex;
+    <div className="w-full">
+      {/* Controles opcionales de simulación */}
+      {showControls && (
+        <div className="flex items-center justify-end gap-2 mb-3 text-[11px]">
+          <button
+            type="button"
+            onClick={onAdvance}
+            className="px-2.5 py-1 rounded-full border border-sky-500/60 bg-sky-500/10 text-sky-200 hover:bg-sky-500/20 transition-colors font-semibold"
+          >
+            Advance step
+          </button>
+          <button
+            type="button"
+            onClick={onReset}
+            className="px-2.5 py-1 rounded-full border border-slate-600 bg-slate-800/70 text-slate-200 hover:bg-slate-700 transition-colors font-semibold"
+          >
+            Reset workflow
+          </button>
+        </div>
+      )}
+
+      <ol className="flex items-center justify-between gap-2">
+        {STEPS.map((step, index) => {
+          const isDone = index < currentIndex;
+          const isActive = index === currentIndex;
+
+          const ts = timestamps[step];
 
           return (
-            <React.Fragment key={step}>
-              {/* Step pill */}
-              <div className="flex flex-col items-center gap-1 flex-1">
+            <li
+              key={step}
+              className="flex-1 flex flex-col items-center min-w-0"
+            >
+              {/* Punto + línea */}
+              <div className="flex items-center w-full">
+                {/* Left connector */}
+                {index > 0 && (
+                  <div
+                    className={[
+                      "h-px flex-1",
+                      isDone
+                        ? "bg-emerald-400"
+                        : isActive
+                        ? "bg-sky-400"
+                        : "bg-slate-700",
+                    ].join(" ")}
+                  />
+                )}
+
+                {/* Dot */}
                 <div
-                  aria-current={isCurrent ? "step" : undefined}
-                  className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-[11px] font-semibold transition-all duration-300 ${
-                    isCurrent
-                      ? "bg-emerald-400 text-slate-950 ring-2 ring-emerald-300 shadow-md shadow-emerald-500/30 scale-105"
-                      : isCompleted
+                  className={[
+                    "shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold",
+                    isDone
                       ? "bg-emerald-500 text-slate-950"
-                      : "bg-slate-800 text-slate-400"
-                  }`}
+                      : isActive
+                      ? "bg-sky-400 text-slate-950"
+                      : "bg-slate-800 text-slate-400 border border-slate-600",
+                  ].join(" ")}
                 >
-                  {isCompleted ? "✓" : step[0]}
+                  {isDone ? "✓" : index + 1}
                 </div>
-                <span className="text-[11px] text-slate-300 font-medium uppercase tracking-wide">
-                  {step}
-                </span>
-                {timestamps[step] && (
-                  <span className="text-[10px] text-slate-500">
-                    {timestamps[step]}
-                  </span>
+
+                {/* Right connector */}
+                {index < STEPS.length - 1 && (
+                  <div
+                    className={[
+                      "h-px flex-1",
+                      isDone || isActive ? "bg-sky-400" : "bg-slate-700",
+                    ].join(" ")}
+                  />
                 )}
               </div>
 
-              {/* Connector */}
-              {index < BECKN_STEPS.length - 1 && (
-                <div
-                  className={`flex-1 h-0.5 -mx-1 md:-mx-2 transition-colors duration-300 ${
-                    index < currentIndex ? "bg-emerald-400" : "bg-slate-700"
-                  }`}
-                />
-              )}
-            </React.Fragment>
+              {/* Label + timestamp */}
+              <div className="mt-1 text-center">
+                <p
+                  className={[
+                    "text-[11px] uppercase tracking-wide",
+                    isActive || isDone ? "text-slate-100" : "text-slate-500",
+                  ].join(" ")}
+                >
+                  {step}
+                </p>
+                {ts && (
+                  <p className="text-[10px] text-slate-500 mt-0.5">{ts}</p>
+                )}
+              </div>
+            </li>
           );
         })}
-      </div>
-
-      {/* Status summary */}
-      <div className="text-[11px] text-slate-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-        <p>
-          <span className="font-semibold text-emerald-300">Current step:</span>{" "}
-          {currentStep}
-        </p>
-        <p className="text-slate-400">
-          {currentIndex === BECKN_STEPS.length - 1
-            ? "Workflow completed successfully."
-            : `${
-                BECKN_STEPS.length - currentIndex - 1
-              } step(s) remaining in the Beckn flow.`}
-        </p>
-      </div>
+      </ol>
     </div>
   );
 };
