@@ -2,7 +2,7 @@
 
 **Grid-Scale Flexibility Orchestration using AI Agents + Beckn-style Protocol**
 
-[<FLUXEON - DESIGN DOCUMENT PREVIEW AND DOWNLOAD>](<(https://drive.google.com/file/d/1WO2RWkZEAIGhF-mGIrCXtUsIkoQrxbO3/view?usp=share_link)>)
+[📄 FLUXEON – Design Document (PDF)](https://drive.google.com/file/d/1WO2RWkZEAIGhF-mGIrCXtUsIkoQrxbO3/view?usp=share_link)
 
 FLUXEON is a demo Command Centre for DSOs.  
 It detects feeder overload risk and orchestrates flexibility from distributed energy resources (DERs) using:
