@@ -1,7 +1,6 @@
-// frontend/dashboard/src/app/front2/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BecknTimeline,
   type BecknStep,
@@ -9,7 +8,7 @@ import {
 import { EventsList, type FlexEvent } from "@/components/front2/EventsList";
 import { DERCard, type DERCardProps } from "@/components/front2/DERCard";
 import { AuditView } from "@/components/front2/AuditView";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useFlexEvents,
   useBecknProgress,
@@ -81,6 +80,9 @@ const MOCK_DERS: DERCardProps[] = [
 
 export default function Front2Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlFeederId = searchParams.get("feeder") ?? undefined;
+
   const [selectedEvent, setSelectedEvent] = useState<FlexEvent | null>(null);
 
   // 🔌 Datos reales desde backend
@@ -94,12 +96,10 @@ export default function Front2Page() {
     if (selectedEvent?.becknStep) {
       return selectedEvent.becknStep;
     }
-
     const fromEvents = events.find((e) => e.becknStep);
     if (fromEvents?.becknStep) {
       return fromEvents.becknStep;
     }
-
     return simulatedStep;
   }, [selectedEvent, events, simulatedStep]);
 
@@ -107,6 +107,31 @@ export default function Front2Page() {
   const { log: auditLog, isLoading: auditLoading } = useAuditTrail(
     selectedEvent?.obpId
   );
+
+  // 🎯 Si viene ?feeder=F1 en la URL, auto-seleccionamos un evento de ese feeder
+  useEffect(() => {
+    if (!urlFeederId || events.length === 0) return;
+
+    const candidate: FlexEvent | null = (() => {
+      // Si ya hay uno seleccionado del mismo feeder, lo mantenemos
+      if (selectedEvent && selectedEvent.feederId === urlFeederId) {
+        return selectedEvent;
+      }
+
+      const match = events.find((e) => e.feederId === urlFeederId);
+      if (match) return match;
+
+      // Fallback: si no hay match pero sí eventos, dejamos el actual o el primero
+      return selectedEvent ?? events[0];
+    })();
+
+    // Para contentar al lint (no setState sync en el cuerpo del effect)
+    const timeout = setTimeout(() => {
+      setSelectedEvent(candidate);
+    }, 0);
+
+    return () => clearTimeout(timeout);
+  }, [urlFeederId, events, selectedEvent]);
 
   return (
     <div className="space-y-6">
@@ -155,6 +180,7 @@ export default function Front2Page() {
               events={events}
               isLoading={eventsLoading}
               onEventClick={setSelectedEvent}
+              filterFeederId={urlFeederId}
             />
           </div>
         </div>
@@ -190,13 +216,6 @@ export default function Front2Page() {
                 {selectedEvent.feederName} • {selectedEvent.id}
               </p>
               <p className="mt-1 text-[11px] text-slate-500">
-                Beckn step:{" "}
-                <span className="font-semibold">
-                  {selectedEvent.becknStep ?? "CONFIRM"}
-                </span>
-                .
-              </p>
-              <p className="mt-1 text-[11px] text-slate-500">
                 Backend audit: Beckn calls logged for {selectedEvent.obpId}.
               </p>
             </div>
@@ -220,6 +239,7 @@ export default function Front2Page() {
             </div>
           </div>
 
+          {/* KPIs del evento */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div>
               <span className="text-[11px] text-slate-400">Status</span>

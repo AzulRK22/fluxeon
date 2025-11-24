@@ -1,20 +1,24 @@
+// frontend/dashboard/src/app/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import FeederTable, { Feeder } from "@/components/FeederTable";
 import LoadChart from "@/components/LoadChart";
 import FeederDetailDrawer from "@/components/FeederDetailDrawer";
+import { useSearchParams } from "next/navigation";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export default function CommandCentrePage() {
+  const searchParams = useSearchParams();
+
   const [feeders, setFeeders] = useState<Feeder[]>([]);
   const [selectedFeeder, setSelectedFeeder] = useState<Feeder | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔁 Polling de feeders (no depende del feeder seleccionado)
+  // 🔁 Polling de feeders
   useEffect(() => {
     let isMounted = true;
 
@@ -58,20 +62,29 @@ export default function CommandCentrePage() {
     };
   }, []);
 
-  // 🎯 Selección inteligente del feeder cuando cambian los datos
-  // Usamos el updater de estado, así solo dependemos de `feeders`
+  // 🎯 Selección inteligente + respetar ?feeder=F1
   useEffect(() => {
+    const urlFeederId = searchParams.get("feeder");
+
     setSelectedFeeder((prev) => {
       if (feeders.length === 0) return null;
 
-      // Si no había seleccionado, tomamos el primero
-      if (!prev) return feeders[0];
+      // Si la URL pide un feeder concreto, intentamos usarlo
+      if (urlFeederId) {
+        const fromUrl = feeders.find((f) => f.id === urlFeederId);
+        if (fromUrl) return fromUrl;
+      }
 
-      // Intentamos mantener el mismo feeder si sigue existiendo
-      const updated = feeders.find((f) => f.id === prev.id);
-      return updated ?? feeders[0];
+      // Si ya había uno seleccionado y sigue existiendo, lo conservamos
+      if (prev) {
+        const updated = feeders.find((f) => f.id === prev.id);
+        if (updated) return updated;
+      }
+
+      // Fallback: primer feeder
+      return feeders[0];
     });
-  }, [feeders]);
+  }, [feeders, searchParams]);
 
   const kpis = useMemo(() => {
     const total = feeders.length;
