@@ -72,6 +72,12 @@ export default function RootLayout({
               >
                 Flex orchestration
               </Link>
+              <Link
+                href="/events"
+                className="px-3 py-1.5 rounded-full border border-slate-700/80 bg-slate-900/30 text-slate-400 hover:border-purple-500/80 hover:text-purple-100 transition-colors"
+              >
+                Events Centre
+              </Link>
             </nav>
 
             {/* Status / meta info */}

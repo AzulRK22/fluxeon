@@ -292,49 +292,42 @@ export const useAuditTrail = (obpId?: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchLog = async () => {
+    if (!obpId) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE}/audit/${encodeURIComponent(obpId)}`,
+        { cache: "no-store" }
+      );
+      if (!response.ok) throw new Error("Failed to fetch audit log");
+
+      const data = (await response.json()) as BackendAuditDTO;
+
+      setLog({
+        obpId: data.obp_id,
+        entries: data.entries,
+      });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+      console.error("Error fetching audit log:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!obpId) {
       setLog(null);
       setError(null);
       return;
     }
-
-    let isMounted = true;
-
-    const fetchLog = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(
-          `${API_BASE}/audit/${encodeURIComponent(obpId)}`,
-          { cache: "no-store" }
-        );
-        if (!response.ok) throw new Error("Failed to fetch audit log");
-
-        const data = (await response.json()) as BackendAuditDTO;
-        if (!isMounted) return;
-
-        setLog({
-          obpId: data.obp_id,
-          entries: data.entries,
-        });
-        setError(null);
-      } catch (err) {
-        if (!isMounted) return;
-        setError(err instanceof Error ? err.message : "Unknown error");
-        console.error("Error fetching audit log:", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
     fetchLog();
-
-    return () => {
-      isMounted = false;
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [obpId]);
 
-  return { log, isLoading, error };
+  return { log, isLoading, error, refetch: fetchLog };
 };
 
 /* -------------------------------------------------------------------------- */

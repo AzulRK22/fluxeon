@@ -1,3 +1,4 @@
+// frontend/dashboard/src/components/front2/EventsList.tsx
 import React from "react";
 import type { BecknStep } from "./BecknTimeline";
 
@@ -20,7 +21,7 @@ interface EventsListProps {
   events?: FlexEvent[];
   isLoading?: boolean;
   onEventClick?: (event: FlexEvent) => void;
-  /** Si se pasa, solo muestra eventos de ese feeder */
+  /** Fase 2: permite filtrar por feederId (p.ej. /front2?feeder=F12) */
   filterFeederId?: string;
 }
 
@@ -70,7 +71,7 @@ const MOCK_EVENTS: FlexEvent[] = [
 ];
 
 export const EventsList: React.FC<EventsListProps> = ({
-  events,
+  events = MOCK_EVENTS,
   isLoading = false,
   onEventClick,
   filterFeederId,
@@ -97,26 +98,21 @@ export const EventsList: React.FC<EventsListProps> = ({
     );
   }
 
-  // Fuente base: si no vienen eventos de backend, usamos mocks
-  const baseEvents = events ?? MOCK_EVENTS;
-  const filteredEvents =
-    filterFeederId && filterFeederId !== ""
-      ? baseEvents.filter((e) => e.feederId === filterFeederId)
-      : baseEvents;
+  const visibleEvents = filterFeederId
+    ? events.filter((e) => e.feederId === filterFeederId)
+    : events;
 
-  if (filteredEvents.length === 0) {
+  if (visibleEvents.length === 0) {
     return (
       <div className="py-6 text-center text-sm text-slate-400">
-        {filterFeederId
-          ? `No active events for feeder ${filterFeederId}`
-          : "No active events"}
+        {filterFeederId ? "No events for this feeder" : "No active events"}
       </div>
     );
   }
 
   return (
     <div className="divide-y divide-slate-800">
-      {filteredEvents.map((event) => (
+      {visibleEvents.map((event) => (
         <button
           key={event.id}
           type="button"
