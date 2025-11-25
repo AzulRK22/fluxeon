@@ -46,3 +46,41 @@ body {
 .audit-row-new {
   animation: highlight-new 2s ease-out;
 }
+
+/* Prevent layout jumps during content updates */
+.min-h-stable {
+  min-height: var(--stable-height, auto);
+}
+
+/* Smooth height transitions for cards and containers */
+.transition-height {
+  transition: height 300ms ease-in-out, min-height 300ms ease-in-out;
+}
+
+/* Stable container for dynamic content */
+.stable-container {
+  contain: layout style;
+  content-visibility: auto;
+}
+
+/* Toast animation */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-in {
+  animation: slide-in-right 300ms ease-out;
+}
+
+/* Smooth scrolling without layout shift */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}

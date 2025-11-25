@@ -19,11 +19,23 @@ const MOCK_LOGS: SimpleAuditLog[] = [
     entries: [
       {
         ts: "2025-11-22T10:00:00Z",
-        message: "DISCOVER -> Found 3 DERs",
+        message: "DISCOVER → Found 3 DERs",
+        latency_ms: 145,
       },
       {
         ts: "2025-11-22T10:00:01Z",
-        message: "SELECT -> Allocated 2 DERs for dispatch",
+        message: "SELECT → Allocated 2 DERs for dispatch",
+        latency_ms: 89,
+      },
+      {
+        ts: "2025-11-22T10:00:02Z",
+        message: "INIT → Contract terms confirmed",
+        latency_ms: 234,
+      },
+      {
+        ts: "2025-11-22T10:00:03Z",
+        message: "CONFIRM → Flexibility order dispatched",
+        latency_ms: 312,
       },
     ],
   },
@@ -32,11 +44,28 @@ const MOCK_LOGS: SimpleAuditLog[] = [
     entries: [
       {
         ts: "2025-11-22T10:05:10Z",
-        message: "INIT -> Contract terms confirmed",
+        message: "DISCOVER → Found 5 DERs",
+        latency_ms: 178,
+      },
+      {
+        ts: "2025-11-22T10:05:11Z",
+        message: "SELECT → Allocated 3 DERs for dispatch",
+        latency_ms: 112,
       },
       {
         ts: "2025-11-22T10:05:12Z",
-        message: "CONFIRM -> Flexibility order dispatched",
+        message: "INIT → Contract terms confirmed",
+        latency_ms: 198,
+      },
+      {
+        ts: "2025-11-22T10:05:13Z",
+        message: "CONFIRM → Flexibility order dispatched",
+        latency_ms: 267,
+      },
+      {
+        ts: "2025-11-22T10:05:15Z",
+        message: "COMPLETE → Transaction completed successfully",
+        latency_ms: 156,
       },
     ],
   },
@@ -81,7 +110,7 @@ export const AuditView: React.FC<AuditViewProps> = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 min-h-[250px]">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] text-slate-400">
           Aggregated OBP audit trail · Each row is a Beckn call logged by the
@@ -119,43 +148,71 @@ export const AuditView: React.FC<AuditViewProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800 bg-[#02091F]">
-            {rows.map((row) => (
-              <tr key={`${row.obpId}-${row.ts}-${row.message.slice(0, 16)}`}>
-                {/* TODO: DEMO METRICS - OBP ID displayed here comes from backend on_confirm callback */}
-                {/* This is the critical P444 audit trail identifier */}
-                <td className="px-3 py-2 text-slate-100 font-mono text-[10px]">
-                  {row.message.includes("FAILURE_EXTERNAL") ? (
-                    <span className="text-red-400 font-bold">FALLA EXTERNA</span>
-                  ) : (
-                    row.obpId || <span className="text-slate-600">PENDING</span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-slate-400">
-                  {new Date(row.ts).toLocaleTimeString("en-GB", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  })}{" "}
-                  UTC
-                </td>
-                <td className="px-3 py-2 text-slate-200">
-                  {row.message.includes("FAILURE_EXTERNAL") ? (
-                     <span className="text-red-300">{row.message}</span>
-                  ) : (
-                    row.message
-                  )}
-                </td>
-                <td className="px-3 py-2 text-right font-mono text-[10px]">
-                  {row.latency_ms ? (
-                    <span className={row.latency_ms > 1000 ? "text-red-400" : "text-emerald-400"}>
-                      {row.latency_ms.toFixed(0)}ms
-                    </span>
-                  ) : (
-                    <span className="text-slate-700">-</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const isConfirm = row.message.includes("CONFIRM");
+              const isComplete = row.message.includes("COMPLETE");
+              const isFailure = row.message.includes("FAILURE_EXTERNAL");
+              
+              // Dynamic row styling
+              const rowClass = isFailure
+                ? "bg-red-500/10"
+                : isConfirm
+                ? "bg-emerald-500/10"
+                : isComplete
+                ? "bg-sky-500/10"
+                : "";
+
+              return (
+                <tr
+                  key={`${row.obpId}-${row.ts}-${row.message.slice(0, 16)}`}
+                  className={rowClass}
+                >
+                  <td className="px-3 py-2 text-slate-100 font-mono text-[10px]">
+                    {isFailure ? (
+                      <span className="text-red-400 font-bold">FALLA EXTERNA</span>
+                    ) : (
+                      row.obpId || <span className="text-slate-600">PENDING</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-slate-400">
+                    {new Date(row.ts).toLocaleTimeString("en-GB", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}{" "}
+                    UTC
+                  </td>
+                  <td className="px-3 py-2">
+                    {isFailure ? (
+                      <span className="text-red-300">{row.message}</span>
+                    ) : isConfirm ? (
+                      <span className="text-emerald-300 font-medium">{row.message}</span>
+                    ) : isComplete ? (
+                      <span className="text-sky-300 font-medium">{row.message}</span>
+                    ) : (
+                      <span className="text-slate-200">{row.message}</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-[10px]">
+                    {row.latency_ms ? (
+                      <span
+                        className={
+                          row.latency_ms > 1000
+                            ? "text-red-400"
+                            : row.latency_ms > 300
+                            ? "text-amber-400"
+                            : "text-emerald-400"
+                        }
+                      >
+                        {row.latency_ms.toFixed(0)}ms
+                      </span>
+                    ) : (
+                      <span className="text-slate-700">-</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
             {rows.length === 0 && (
               <tr>
                 <td
