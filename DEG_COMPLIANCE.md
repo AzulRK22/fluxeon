@@ -4,7 +4,7 @@
 
 ### Minimum Requirements (100%)
 
-1. ✅ **Sub-5s SLA**: ~345ms detection-to-dispatch
+1. ✅ **Sub-5s SLA**: ~2284ms detection-to-dispatch
 2. ✅ **Beckn Workflows**: discover/confirm/status implemented
 3. ✅ **Forecast Overloads**: XGBoost model operational
 4. ✅ **DER Coordination**: Full orchestrator with Beckn
