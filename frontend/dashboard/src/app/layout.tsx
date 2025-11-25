@@ -1,16 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter } from "next/font/google";
 import Link from "next/link";
 import Image from "next/image";
 import BackendStatusBadge from "@/components/BackendStatusBadge";
 import GlobalStatusIndicator from "@/components/GlobalStatusIndicator";
 import { ToastProvider } from "@/components/ToastProvider";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "FLUXEON Command Centre",
@@ -25,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="min-h-screen bg-[#020617]">
-      <body className={inter.className} style={{ backgroundColor: '#020617' }}>
+      <body className="font-sans" style={{ backgroundColor: '#020617' }}>
         <ToastProvider>
           <div className="min-h-screen flex flex-col bg-[#020617] text-slate-100 antialiased">
             {/* Top shell / app chrome */}
