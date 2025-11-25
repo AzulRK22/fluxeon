@@ -19,7 +19,7 @@ AI Pipeline          Redis Cache         DER Providers
 ### 1. Build Beckn-ONIX
 
 ```bash
-cd d:\Users\lauta\Desktop\hackathonDEG\beckn-home\beckn-onix-main
+cd d:\..\beckn-home\beckn-onix-main
 
 # Extract schemas
 unzip schemas.zip
@@ -56,10 +56,10 @@ This starts:
 ngrok http 8000
 ```
 
-Copy the HTTPS URL (e.g., `https://geraldo-unsensualized-golden.ngrok-free.dev`) and update `.env`:
+Copy the HTTPS URL (e.g., `YOUR_NGROK_URL_HERE.ngrook-free.dev`) and update `.env`:
 
 ```ini
-BAP_URI=https://geraldo-unsensualized-golden.ngrok-free.dev/beckn/callbacks
+BAP_URI=YOUR_NGROK_URL_HERE.ngrook-free.dev/beckn/callbacks
 ```
 
 Restart FLUXEON backend:
@@ -92,7 +92,7 @@ docker run -d -p 6379:6379 redis:alpine
 ### Start Beckn-ONIX
 
 ```bash
-cd d:\Users\lauta\Desktop\hackathonDEG\beckn-home\beckn-onix-main
+cd ..\beckn-home\beckn-onix-main
 ./server --config=config/fluxeon-bap.yaml
 ```
 
@@ -137,7 +137,7 @@ python -m app.core.beckn_client
 Expected output:
 
 ```
-🚀 FLUXEON BECKN ORCHESTRATOR (via ONIX)
+FLUXEON BECKN ORCHESTRATOR (via ONIX)
 [1/4] Sending SEARCH via ONIX...
 ✓ SEARCH sent via ONIX
 [1/4] Waiting for ON_SEARCH callbacks from ONIX...
