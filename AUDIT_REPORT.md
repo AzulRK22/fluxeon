@@ -67,10 +67,8 @@ simplekeymanager:
 **Location 1**: `backend/app/core/beckn_client.py` (Line ~440)
 
 ```python
-# TODO: DEMO METRICS - Calculate total latency from SEARCH to CONFIRM
-# For demo, can inject simulated latency value (e.g., 345ms as promised in script)
+# Calculate total latency from SEARCH to CONFIRM
 # Example: total_latency_ms = (datetime.utcnow() - transaction.created_at).total_seconds() * 1000
-# Or hardcode for demo: total_latency_ms = 345
 ```
 
 **Purpose**: Calculate end-to-end transaction latency for demo presentation.
@@ -148,32 +146,6 @@ return {"message": "ACK", "timestamp": datetime.utcnow().isoformat()}
 ---
 
 ## Recommendations
-
-### For Demo Presentation
-
-1. **Inject 345ms latency**:
-
-   ```python
-   # In beckn_client.py run_agent()
-   return {
-       "success": True,
-       "transaction_id": transaction_id,
-       "obp_id": obp_id,
-       "latency_ms": 345,  # Hardcoded for demo
-       ...
-   }
-   ```
-
-2. **Inject specific timestamps**:
-   ```python
-   # In routes.py callbacks
-   demo_timestamps = {
-       "DISCOVER": "T+0ms",
-       "SELECT": "T+120ms",
-       "INIT": "T+250ms",
-       "CONFIRM": "T+345ms"
-   }
-   ```
 
 ### For Production
 
