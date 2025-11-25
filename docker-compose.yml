@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  # Redis for ONIX caching
+  fluxeon-redis:
+    image: redis:alpine
+    container_name: fluxeon-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - fluxeon-network
+    restart: unless-stopped
+
+  # Beckn-ONIX Protocol Adapter
+  fluxeon-beckn-onix:
+    build:
+      context: ../beckn-home/beckn-onix-main
+      dockerfile: Dockerfile.adapter
+    container_name: fluxeon-beckn-onix
+    ports:
+      - "8081:8081"
+    volumes:
+      - ../beckn-home/beckn-onix-main/config:/app/config
+      - ../beckn-home/beckn-onix-main/schemas:/app/schemas
+    command: ["./server", "--config=config/fluxeon-bap.yaml"]
+    depends_on:
+      - fluxeon-redis
+    networks:
+      - fluxeon-network
+    restart: unless-stopped
+
+  # FLUXEON Backend - Python FastAPI
+  fluxeon-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fluxeon-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    environment:
+      - ONIX_URL=http://fluxeon-beckn-onix:8081
+    depends_on:
+      - fluxeon-beckn-onix
+    networks:
+      - fluxeon-network
+    restart: unless-stopped
+
+networks:
+  fluxeon-network:
+    driver: bridge

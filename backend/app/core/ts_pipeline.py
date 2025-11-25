@@ -6,7 +6,7 @@ Predicts risk level (0, 1, 2) based on the last 4 readings (1 hour).
 import joblib
 import numpy as np
 import os
-from app.models import FeederReading
+from app.models.feeder import FeederReading
 
 # Paths setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

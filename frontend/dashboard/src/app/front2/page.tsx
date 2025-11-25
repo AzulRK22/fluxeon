@@ -14,6 +14,7 @@ import {
   useFlexEvents,
   useBecknProgress,
   useAuditTrail,
+  useRecentAuditLogs,
 } from "@/hooks/useFront2Hooks";
 
 const MOCK_DERS: DERCardProps[] = [
@@ -122,6 +123,10 @@ export default function Front2Page() {
   const { log: auditLog, isLoading: auditLoading } = useAuditTrail(
     selectedEvent?.obpId
   );
+
+  // 📋 Todos los audit logs recientes (vista agregada)
+  const { logs: recentAuditLogs, isLoading: recentAuditLoading } =
+    useRecentAuditLogs();
 
   // 🎯 Si viene ?feeder=F1 en la URL, auto-seleccionamos un evento de ese feeder
   useEffect(() => {
@@ -362,7 +367,10 @@ export default function Front2Page() {
         <h3 className="text-sm font-semibold text-slate-100 mb-3">
           Audit trail (aggregated view)
         </h3>
-        <AuditView />
+        <AuditView
+          logsFromBackend={recentAuditLogs}
+          isLoading={recentAuditLoading}
+        />
       </section>
 
       {/* Footer Info */}

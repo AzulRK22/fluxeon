@@ -23,11 +23,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="min-h-screen">
-      <body
-        className={`${inter.className} bg-[#020617] text-slate-100 antialiased`}
-      >
-        <div className="min-h-screen flex flex-col">
+    <html lang="en" className="min-h-screen bg-[#020617]">
+      <body className={inter.className} style={{ backgroundColor: '#020617' }}>
+        <div className="min-h-screen flex flex-col bg-[#020617] text-slate-100 antialiased">
           {/* Top shell / app chrome */}
           <header className="border-b border-slate-800 px-6 py-3 bg-[#020617]/95 backdrop-blur flex items-center justify-between gap-4">
             {/* Brand block */}
