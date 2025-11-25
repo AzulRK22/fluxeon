@@ -13,7 +13,7 @@
 ### Paso 1: Construir Imágenes Docker
 
 ```bash
-cd d:\Users\lauta\Desktop\hackathonDEG\fluxeon
+cd d:\..\hackathonDEG\fluxeon
 docker-compose build
 ```
 
@@ -55,13 +55,13 @@ curl http://localhost:8000/health
 ✅ **Ngrok ya está corriendo** en:
 
 ```
-https://geraldo-unsensualized-golden.ngrok-free.dev
+https://YOUR_NGROK_URL_HERE.ngrook-free.dev
 ```
 
 ✅ **BAP_URI ya actualizado** en `.env`:
 
 ```ini
-BAP_URI=https://geraldo-unsensualized-golden.ngrok-free.dev/beckn/webhook
+BAP_URI=https://YOUR_NGROK_URL_HERE.ngrook-free.dev/beckn/webhook
 ```
 
 ---
@@ -90,7 +90,7 @@ docker logs -f fluxeon-backend
    ↓
 2. Backend → POST https://deg-hackathon-bap-sandbox.becknprotocol.io/api/discover
    ↓ (ACK inmediato)
-3. Sandbox → POST https://geraldo-unsensualized-golden.ngrok-free.dev/beckn/webhook/on_discover
+3. Sandbox → POST https://YOUR_NGROK_URL_HERE.ngrook-free.dev/beckn/webhook/on_discover
    ↓ (Catálogo de DERs)
 4. Backend selecciona mejor DER
    ↓
@@ -130,7 +130,7 @@ docker-compose restart fluxeon-backend
 
 ```bash
 # Todo en uno
-cd d:\Users\lauta\Desktop\hackathonDEG\fluxeon && docker-compose build && docker-compose up -d
+cd d:\..\hackathonDEG\fluxeon && docker-compose build && docker-compose up -d
 
 # Probar
 curl -X POST http://localhost:8000/test/discover
