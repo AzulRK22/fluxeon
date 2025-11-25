@@ -55,6 +55,7 @@ export const AuditView: React.FC<AuditViewProps> = ({
       obpId: log.obpId,
       ts: entry.ts,
       message: entry.message,
+      latency_ms: entry.latency_ms,
     }))
   );
 
@@ -114,6 +115,7 @@ export const AuditView: React.FC<AuditViewProps> = ({
               <th className="px-3 py-2 font-semibold">OBP ID</th>
               <th className="px-3 py-2 font-semibold">Timestamp</th>
               <th className="px-3 py-2 font-semibold">Message</th>
+              <th className="px-3 py-2 font-semibold text-right">Latency</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800 bg-[#02091F]">
@@ -122,7 +124,11 @@ export const AuditView: React.FC<AuditViewProps> = ({
                 {/* TODO: DEMO METRICS - OBP ID displayed here comes from backend on_confirm callback */}
                 {/* This is the critical P444 audit trail identifier */}
                 <td className="px-3 py-2 text-slate-100 font-mono text-[10px]">
-                  {row.obpId}
+                  {row.message.includes("FAILURE_EXTERNAL") ? (
+                    <span className="text-red-400 font-bold">FALLA EXTERNA</span>
+                  ) : (
+                    row.obpId || <span className="text-slate-600">PENDING</span>
+                  )}
                 </td>
                 <td className="px-3 py-2 text-slate-400">
                   {new Date(row.ts).toLocaleTimeString("en-GB", {
@@ -132,13 +138,28 @@ export const AuditView: React.FC<AuditViewProps> = ({
                   })}{" "}
                   UTC
                 </td>
-                <td className="px-3 py-2 text-slate-200">{row.message}</td>
+                <td className="px-3 py-2 text-slate-200">
+                  {row.message.includes("FAILURE_EXTERNAL") ? (
+                     <span className="text-red-300">{row.message}</span>
+                  ) : (
+                    row.message
+                  )}
+                </td>
+                <td className="px-3 py-2 text-right font-mono text-[10px]">
+                  {row.latency_ms ? (
+                    <span className={row.latency_ms > 1000 ? "text-red-400" : "text-emerald-400"}>
+                      {row.latency_ms.toFixed(0)}ms
+                    </span>
+                  ) : (
+                    <span className="text-slate-700">-</span>
+                  )}
+                </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={3}
+                  colSpan={4}
                   className="px-3 py-4 text-center text-slate-500"
                 >
                   No audit entries available.

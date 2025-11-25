@@ -23,6 +23,7 @@ class TransactionStatus(str, Enum):
     COMPLETED = "COMPLETED"       # Successfully completed
     CANCELLED = "CANCELLED"       # Cancelled by either party
     FAILED = "FAILED"             # Failed/Error state
+    FAILURE_EXTERNAL = "FAILURE_EXTERNAL"  # External sandbox timeout/failure
 
 
 class BecknAction(str, Enum):
@@ -73,6 +74,8 @@ class BecknTransaction(BaseModel):
     provider_id: Optional[str] = Field(None, description="Selected provider BAP ID")
     provider_name: Optional[str] = Field(None, description="Provider name")
     quoted_price: Optional[float] = Field(None, description="Quoted price for service")
+    metrics: Dict[str, Any] = Field(default_factory=dict, description="Performance metrics and measurements")
+    history: List[Dict[str, Any]] = Field(default_factory=list, description="Audit trail history")
     
     class Config:
         json_schema_extra = {

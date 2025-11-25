@@ -276,6 +276,7 @@ export const useFlexEvents = () => {
 export interface SimpleAuditEntry {
   ts: string;
   message: string;
+  latency_ms?: number;
 }
 
 export interface SimpleAuditLog {
