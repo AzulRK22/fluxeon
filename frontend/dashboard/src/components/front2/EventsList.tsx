@@ -15,6 +15,8 @@ export interface FlexEvent {
 
   /** Beckn step real reportado por backend: DISCOVER/SELECT/INIT/CONFIRM/STATUS/COMPLETE */
   becknStep?: BecknStep;
+  /** Confianza del modelo / prob de mantener entrega (mock) */
+  confidencePct?: number;
 }
 
 interface EventsListProps {
@@ -145,7 +147,7 @@ export const EventsList: React.FC<EventsListProps> = ({
           </div>
 
           {/* Flex Metrics */}
-          <div className="grid grid-cols-3 gap-2 mb-2">
+          <div className="grid grid-cols-4 gap-2 mb-2">
             <div className="bg-slate-900 rounded-lg px-2.5 py-2">
               <span className="text-[11px] text-slate-400 block">
                 Requested
@@ -166,6 +168,12 @@ export const EventsList: React.FC<EventsListProps> = ({
               <span className="text-[11px] text-slate-400 block">Success</span>
               <span className="text-sm font-semibold text-sky-300">
                 {successRate(event.flexRequested, event.flexDelivered)}%
+              </span>
+            </div>
+            <div className="bg-slate-900 rounded-lg px-2.5 py-2">
+              <span className="text-[11px] text-slate-400 block">Confidence</span>
+              <span className="text-sm font-semibold text-violet-300">
+                {event.confidencePct != null ? `${event.confidencePct}%` : '–'}
               </span>
             </div>
           </div>

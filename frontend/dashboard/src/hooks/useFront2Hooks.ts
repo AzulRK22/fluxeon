@@ -220,6 +220,15 @@ const mapBackendEventToFlexEvent = (e: BackendEventDTO): FlexEvent => {
     derCount: 3,
     obpId: `OBP-${e.event_id}`,
     becknStep: maybeBecknStep,
+    confidencePct: (() => {
+      // Mock: base en progreso Beckn y ratio entrega
+      const ratio = e.requested_kw > 0 ? e.delivered_kw / e.requested_kw : 0;
+      const base = Math.round(ratio * 40) + 50; // 50–90 según performance
+      const stepBonus = maybeBecknStep
+        ? (['DISCOVER','SELECT','INIT','CONFIRM','STATUS','COMPLETE'].indexOf(maybeBecknStep) + 1) * 3
+        : 0;
+      return Math.min(99, Math.max(55, base + stepBonus));
+    })(),
   };
 };
 
