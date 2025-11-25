@@ -4,6 +4,42 @@ from app.core.beckn_client import transaction_store
 
 router = APIRouter()
 
+@router.get("/recent")
+async def get_recent_transactions():
+    """Get all recent transactions for aggregated audit view"""
+    all_logs = []
+    
+    # Get all transactions from the store
+    for txn in transaction_store.values():
+        entries = []
+        
+        # Build entries from history
+        for event in txn.history:
+            entries.append({
+                "ts": event.get("timestamp"),
+                "message": event.get("message"),
+                "latency_ms": event.get("latency_ms")
+            })
+            
+        # If transaction failed externally, ensure we have an entry for it
+        if txn.status == "FAILURE_EXTERNAL":
+            latency = txn.metrics.get("latency_attempt", 0)
+            error_msg = txn.metrics.get("error", "Unknown error")
+            if not any("FAILURE" in e["message"] for e in entries):
+                entries.append({
+                    "ts": txn.created_at.isoformat() if txn.created_at else "2025-11-25T00:00:00Z",
+                    "message": f"FAILURE_EXTERNAL: {error_msg}",
+                    "latency_ms": latency
+                })
+        
+        if entries:  # Only include transactions with history
+            all_logs.append({
+                "obp_id": txn.obp_id or f"OBP-{txn.transaction_id[:8]}",
+                "entries": entries
+            })
+    
+    return all_logs
+
 @router.get("/{obp_id}")
 async def get_audit_log(obp_id: str):
     # Try to find transaction by OBP ID or Transaction ID

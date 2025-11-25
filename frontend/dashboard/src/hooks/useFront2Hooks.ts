@@ -331,6 +331,44 @@ export const useAuditTrail = (obpId?: string) => {
   return { log, isLoading, error, refetch: fetchLog };
 };
 
+/**
+ * Hook para leer todos los audit logs recientes (vista agregada)
+ * GET /audit/recent
+ */
+export const useRecentAuditLogs = () => {
+  const [logs, setLogs] = useState<SimpleAuditLog[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLogs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/audit/recent`, {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Failed to fetch recent audit logs");
+
+      const data = (await response.json()) as SimpleAuditLog[];
+      setLogs(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+      console.error("Error fetching recent audit logs:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+    // Poll every 3 seconds for updates
+    const interval = setInterval(fetchLogs, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return { logs, isLoading, error, refetch: fetchLogs };
+};
+
 /* -------------------------------------------------------------------------- */
 /*                          Beckn workflow (simulado)                         */
 /* -------------------------------------------------------------------------- */
