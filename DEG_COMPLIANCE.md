@@ -24,7 +24,7 @@
 - **Model**: XGBoost (trained on UK Power Networks data)
 - **Features**: load_kw, temperature, is_workday, hour, day
 - **Output**: 3 risk levels (0: Normal, 1: Warning, 2: Critical)
-- **Latency**: <1s inference time
+- **Latency**: <3s inference time
 
 ### Beckn Integration
 
@@ -36,15 +36,15 @@
 ### Orchestration
 
 - **Flow**: AI Detection → Beckn Discover → DER Selection → Confirm
-- **SLA**: End-to-end <5s (typically ~345ms)
+- **SLA**: End-to-end <5s (typically ~2284ms)
 - **Resilience**: Async callbacks with 60s timeout
 
 ---
 
 ## 📊 Demo Metrics
 
-- **Detection Latency**: <1s
-- **Beckn Round-trip**: ~345ms
+- **Detection Latency**: <3s
+- **Beckn Round-trip**: ~2284ms
 - **Total SLA**: <5s (requirement met)
 - **Accuracy**: 95%+ on test data
 
