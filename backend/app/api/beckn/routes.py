@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request, HTTPException
 from typing import Dict, Any
 import logging
 from datetime import datetime
+from app.models.beckn import TransactionStatus
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

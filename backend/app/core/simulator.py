@@ -6,7 +6,7 @@ Generates realistic daily load curves and injects random demand spikes.
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-from app.models import FeederReading
+from app.models.feeder import FeederReading
 
 class GridSimulator:
     # Configuration aligned with UK Power Networks
