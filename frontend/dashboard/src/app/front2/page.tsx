@@ -9,6 +9,7 @@ import {
 import { EventsList, type FlexEvent } from "@/components/front2/EventsList";
 import { DERCard, type DERCardProps } from "@/components/front2/DERCard";
 import { AuditView } from "@/components/front2/AuditView";
+import { ToastProvider, useToast } from "@/components/front2/ToastProvider";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   useFlexEvents,
@@ -159,14 +160,25 @@ export default function Front2Page() {
     }
   }
 
-  return (
-    <div className="space-y-6">
+  // Toast hook inside component so provider must wrap output below
+  const PageContent = () => {
+    const { addToast } = useToast();
+
+    const handlePlan = (derId: string) => {
+      addToast(`Flexibility plan initiated for ${derId}`, "success");
+    };
+    const handleMute = (derId: string) => {
+      addToast(`Alerts muted for ${derId} (15m)`, "info");
+    };
+
+    return (
+      <div className="space-y-6">
       {/* Main Grid */}
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Left Column: Beckn Timeline + Events */}
         <div className="xl:col-span-2 space-y-4">
           {/* Beckn Timeline */}
-          <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4">
+          <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4 min-h-[300px]">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="text-sm font-semibold text-slate-100">
@@ -356,7 +368,7 @@ export default function Front2Page() {
 
         {/* Right Column: DER Grid */}
         <div className="xl:col-span-1">
-          <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4 h-full flex flex-col">
+          <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4 h-full flex flex-col min-h-[500px]">
             <h3 className="text-sm font-semibold text-slate-100 mb-3">
               Available DERs
             </h3>
@@ -366,7 +378,12 @@ export default function Front2Page() {
             </p>
             <div className="space-y-3">
               {MOCK_DERS.map((der) => (
-                <DERCard key={der.id} {...der} />
+                <DERCard
+                  key={der.id}
+                  {...der}
+                  onPlan={() => handlePlan(der.id)}
+                  onMute={() => handleMute(der.id)}
+                />
               ))}
             </div>
           </div>
@@ -381,6 +398,13 @@ export default function Front2Page() {
           regulatory-grade audit trails for flexibility dispatch.
         </p>
       </section>
-    </div>
+      </div>
+    );
+  };
+
+  return (
+    <ToastProvider>
+      <PageContent />
+    </ToastProvider>
   );
 }

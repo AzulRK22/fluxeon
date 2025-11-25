@@ -12,6 +12,8 @@ export interface DERCardProps {
   status: "AVAILABLE" | "ALLOCATED" | "ACTIVE" | "UNAVAILABLE";
   responseTime?: number; // seconds
   cost?: number; // price per kWh
+  onPlan?: () => void; // Quick action: Flexibility Plan
+  onMute?: () => void; // Quick action: Mute Alerts
 }
 
 const STATUS_STYLES: Record<DERCardProps["status"], string> = {
@@ -38,6 +40,8 @@ export const DERCard: React.FC<DERCardProps> = ({
   status,
   responseTime,
   cost,
+  onPlan,
+  onMute,
 }) => {
   // safety por si backend manda cosas raras
   const safeCapacity = Math.max(0, capacity);
@@ -159,14 +163,25 @@ export const DERCard: React.FC<DERCardProps> = ({
         )}
       </div>
 
-      {/* Quick action */}
-      {status === "AVAILABLE" && (
-        <button
-          type="button"
-          className="w-full mt-3 rounded-lg bg-emerald-500/90 hover:bg-emerald-400 text-slate-950 text-xs font-semibold py-2 transition-colors"
-        >
-          Allocate flexibility
-        </button>
+      {/* Quick actions */}
+      {(status === "AVAILABLE" || status === "ACTIVE") && (
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={onPlan}
+            className="flex-1 rounded-lg bg-emerald-500/90 hover:bg-emerald-400 text-slate-950 text-[11px] font-semibold py-2 transition-colors"
+          >
+            Flexibility Plan
+          </button>
+          <button
+            type="button"
+            onClick={onMute}
+            className="px-3 rounded-lg bg-slate-700/90 hover:bg-slate-600 text-slate-100 text-[11px] font-semibold py-2 transition-colors"
+            title="Mute alerts for 15 minutes"
+          >
+            🔕
+          </button>
+        </div>
       )}
     </div>
   );
