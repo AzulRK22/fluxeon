@@ -56,10 +56,10 @@ This starts:
 ngrok http 8000
 ```
 
-Copy the HTTPS URL (e.g., `https://abc123.ngrok.io`) and update `.env`:
+Copy the HTTPS URL (e.g., `https://geraldo-unsensualized-golden.ngrok-free.dev`) and update `.env`:
 
 ```ini
-BAP_URI=https://abc123.ngrok.io/beckn/callbacks
+BAP_URI=https://geraldo-unsensualized-golden.ngrok-free.dev/beckn/callbacks
 ```
 
 Restart FLUXEON backend:

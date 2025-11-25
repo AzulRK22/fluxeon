@@ -45,6 +45,7 @@ class BecknClient:
     def __init__(self):
         # DEG Hackathon BAP Sandbox URL
         self.sandbox_url = settings.beckn_bap_sandbox_url
+        self.onix_url = settings.onix_url
         self.timeout = httpx.Timeout(30.0, connect=10.0)
         
     async def send_discover(
@@ -376,6 +377,16 @@ async def run_agent(
             "timestamp": datetime.utcnow().isoformat(),
             "message": f"DISCOVER -> Sent request for {flexibility_kw}kW"
         })
+        
+    # Check for immediate failure (e.g. timeout)
+    if transaction.status == TransactionStatus.FAILURE_EXTERNAL:
+        latency = transaction.metrics.get("latency_attempt", 0)
+        return {
+            "status": "failed", 
+            "error": f"Sandbox Timeout. Agent was ready in {latency:.2f}ms",
+            "latency_ms": latency,
+            "transaction_id": transaction_id
+        }
     
     # Step 2: Wait for async callback (ON_DISCOVER)
     logger.info("[1/3] Waiting for async ON_DISCOVER callback...")

@@ -9,12 +9,12 @@
 ngrok http 8000
 ```
 
-**Copiar URL HTTPS**: `https://xxxx.ngrok.io`
+**Copiar URL HTTPS**: `https://geraldo-unsensualized-golden.ngrok-free.dev`
 
 **Actualizar `.env`**:
 
 ```ini
-BAP_URI=https://xxxx.ngrok.io/beckn/webhook
+BAP_URI=https://geraldo-unsensualized-golden.ngrok-free.dev/beckn/webhook
 ```
 
 ### 2. Iniciar Servicios
@@ -210,7 +210,7 @@ transaction_store[transaction_id].obp_id = order_id
 
 **Verificar**:
 
-1. Ngrok está corriendo: `curl https://xxxx.ngrok.io/health`
+1. Ngrok está corriendo: `curl https://geraldo-unsensualized-golden.ngrok-free.dev/health`
 2. BAP_URI actualizado en `.env`
 3. Backend escuchando en puerto 8000: `docker ps`
 4. Ruta del webhook correcta: `/beckn/webhook/on_discover`
@@ -253,7 +253,7 @@ transaction_store[transaction_id].obp_id = order_id
 ngrok http 8000
 
 # 2. Copiar URL y actualizar .env
-# BAP_URI=https://xxxx.ngrok.io/beckn/webhook
+# BAP_URI=https://geraldo-unsensualized-golden.ngrok-free.dev/beckn/webhook
 
 # 3. Iniciar servicios (Terminal 2)
 cd d:\Users\lauta\Desktop\hackathonDEG\fluxeon

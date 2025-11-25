@@ -4,7 +4,7 @@ Beckn Transaction Models for FLUXEON.
 Handles state persistence for asynchronous Beckn protocol interactions.
 """
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any, Literal
+from typing import Optional, Dict, Any, Literal, List
 from datetime import datetime
 from enum import Enum
 
@@ -118,7 +118,7 @@ class BecknContext(BaseModel):
                 "action": "search",
                 "core_version": "1.1.0",
                 "bap_id": "fluxeon-dso-bap-dev",
-                "bap_uri": "https://your-ngrok-url.ngrok.io/beckn/callbacks",
+                "bap_uri": "https://geraldo-unsensualized-golden.ngrok-free.dev/beckn/webhook",
                 "transaction_id": "550e8400-e29b-41d4-a716-446655440000",
                 "message_id": "660e8400-e29b-41d4-a716-446655440001",
                 "timestamp": "2025-11-24T17:00:00.000Z",

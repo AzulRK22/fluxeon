@@ -1,0 +1,8 @@
+d:\Users\lauta\Desktop\hackathonDEG\fluxeon\backend\app\core\beckn_client.py:546: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  now = datetime.utcnow()
+\u2717 DISCOVER failed after 31041.81ms: 
+d:\Users\lauta\Desktop\hackathonDEG\fluxeon\backend\app\core\beckn_client.py:376: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "timestamp": datetime.utcnow().isoformat(),
+
+Final Result:
+{'status': 'failed', 'error': 'Sandbox Timeout. Agent was ready in 31041.81ms', 'latency_ms': 31041.813611984253, 'transaction_id': 'babb7edf-3658-4377-b28e-138e99396f43'}

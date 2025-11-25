@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     
     # Beckn BAP Configuration
     bap_id: str = Field(default="fluxeon-dso-bap-dev", env="BAP_ID")
-    bap_uri: str = Field(default="https://your-ngrok-url.ngrok.io/beckn/webhook", env="BAP_URI")
+    bap_uri: str = Field(default="https://geraldo-unsensualized-golden.ngrok-free.dev/beckn/webhook", env="BAP_URI")
+    onix_url: str = Field(default="http://localhost:8081", env="ONIX_URL")
     
     # DEG Hackathon BAP Sandbox Configuration
     # CRITICAL: Official API endpoints - DO NOT use generic Beckn Gateway
@@ -50,6 +51,7 @@ class Settings(BaseSettings):
         env_file = os.path.join(os.path.dirname(__file__), "../../../.env")
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"
 
 # Singleton instance
 settings = Settings()
