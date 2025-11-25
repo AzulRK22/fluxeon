@@ -2,10 +2,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import FeederTable, { Feeder } from "@/components/FeederTable";
 import LoadChart from "@/components/LoadChart";
 import FeederDetailDrawer from "@/components/FeederDetailDrawer";
 import { useSearchParams } from "next/navigation";
+import type { FeederLocation } from "@/components/FeederMap";
+
+// Dynamic import for map (client-side only)
+const FeederMap = dynamic(() => import("@/components/FeederMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[400px] border border-slate-800 rounded-xl bg-[#02091F] flex items-center justify-center">
+      <p className="text-sm text-slate-400">Loading map...</p>
+    </div>
+  ),
+});
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -17,6 +29,7 @@ export default function CommandCentrePage() {
   const [selectedFeeder, setSelectedFeeder] = useState<Feeder | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoUpdate, setAutoUpdate] = useState<boolean>(true);
 
   // 🔁 Polling de feeders
   useEffect(() => {
@@ -25,6 +38,9 @@ export default function CommandCentrePage() {
     const fetchFeeders = async () => {
       try {
         setIsLoading(true);
+        // Emit global update start event
+        window.dispatchEvent(new CustomEvent("fluxeon:update-start"));
+        
         const res = await fetch(`${API_BASE_URL}/feeders`, {
           cache: "no-store",
         });
@@ -49,18 +65,52 @@ export default function CommandCentrePage() {
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          // Emit global update end event
+          window.dispatchEvent(new CustomEvent("fluxeon:update-end"));
         }
       }
     };
 
     fetchFeeders();
-    const interval = setInterval(fetchFeeders, 2500);
+    
+    // Only set up interval if auto-update is enabled
+    let interval: NodeJS.Timeout | undefined;
+    if (autoUpdate) {
+      interval = setInterval(fetchFeeders, 2500);
+    }
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [autoUpdate]);
+
+  // 📍 Manual refresh function
+  const handleManualRefresh = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch(`${API_BASE_URL}/feeders`, {
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch feeders (${res.status})`);
+      }
+
+      const data = (await res.json()) as Feeder[];
+      setFeeders(data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching feeders", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unexpected error while loading feeders."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 🎯 Selección inteligente + respetar ?feeder=F1
   useEffect(() => {
@@ -96,6 +146,25 @@ export default function CommandCentrePage() {
         : 0;
 
     return { total, alerts, critical, avgLoad };
+  }, [feeders]);
+
+  // Mock coordinates for London/Islington area feeders
+  const feederLocations: FeederLocation[] = useMemo(() => {
+    const baseCoords = [
+      { lat: 51.5465, lng: -0.1058 }, // Islington center
+      { lat: 51.5520, lng: -0.1100 }, // Highbury
+      { lat: 51.5410, lng: -0.0980 }, // King's Cross area
+      { lat: 51.5380, lng: -0.1150 }, // Pentonville
+    ];
+
+    return feeders.map((feeder, idx) => ({
+      id: feeder.id,
+      name: feeder.name,
+      lat: baseCoords[idx % baseCoords.length].lat + (Math.random() - 0.5) * 0.01,
+      lng: baseCoords[idx % baseCoords.length].lng + (Math.random() - 0.5) * 0.01,
+      state: feeder.state,
+      load_kw: feeder.load_kw,
+    }));
   }, [feeders]);
 
   return (
@@ -165,6 +234,24 @@ export default function CommandCentrePage() {
         </div>
       )}
 
+      {/* Geographic Map */}
+      <section className="mt-4">
+        <div className="mb-2">
+          <h3 className="text-sm font-semibold text-slate-100">Feeder Locations</h3>
+          <p className="text-[11px] text-slate-400">
+            Interactive map showing feeder locations in London/Islington area · Color-coded by risk level
+          </p>
+        </div>
+        <FeederMap
+          feeders={feederLocations}
+          selectedFeederId={selectedFeeder?.id ?? null}
+          onFeederClick={(feederId) => {
+            const feeder = feeders.find((f) => f.id === feederId);
+            if (feeder) setSelectedFeeder(feeder);
+          }}
+        />
+      </section>
+
       {/* Main grid */}
       <section className="grid grid-cols-12 gap-4 mt-4 items-stretch">
         {/* Columna izquierda */}
@@ -174,6 +261,9 @@ export default function CommandCentrePage() {
             selectedFeederId={selectedFeeder?.id ?? null}
             onSelect={(feeder) => setSelectedFeeder(feeder)}
             isLoading={isLoading}
+            autoUpdate={autoUpdate}
+            onAutoUpdateToggle={() => setAutoUpdate(!autoUpdate)}
+            onManualRefresh={handleManualRefresh}
           />
 
           {selectedFeeder && (

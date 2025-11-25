@@ -14,6 +14,9 @@ interface Props {
   selectedFeederId: string | null;
   onSelect: (feeder: Feeder) => void;
   isLoading?: boolean;
+  autoUpdate?: boolean;
+  onAutoUpdateToggle?: () => void;
+  onManualRefresh?: () => void;
 }
 
 function getRiskScore(state: number): string {
@@ -34,6 +37,9 @@ export default function FeederTable({
   selectedFeederId,
   onSelect,
   isLoading = false,
+  autoUpdate = true,
+  onAutoUpdateToggle,
+  onManualRefresh,
 }: Props) {
   const hasFeeders = feeders.length > 0;
   const hasTemperature = feeders.some(
@@ -59,14 +65,35 @@ export default function FeederTable({
           <p className="text-[11px] text-slate-500 mt-0.5">
             Live risk from AI model · {feeders.length} feeder
             {feeders.length === 1 ? "" : "s"}
-            {isLoading && (
-              <span className="ml-1 text-sky-400">• updating…</span>
-            )}
           </p>
         </div>
-        <span className="text-[11px] text-slate-500">
-          0 = normal · 1 = warning · 2 = critical
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-slate-500 mr-2">
+            0 = normal · 1 = warning · 2 = critical
+          </span>
+          
+          {onAutoUpdateToggle && (
+            <button
+              onClick={onAutoUpdateToggle}
+              className={`px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
+                autoUpdate
+                  ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              }`}
+            >
+              {autoUpdate ? "Auto-update ON" : "Auto-update OFF"}
+            </button>
+          )}
+          {onManualRefresh && (
+            <button
+              onClick={onManualRefresh}
+              disabled={isLoading}
+              className="px-3 py-1.5 text-[11px] font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {isLoading ? "Refreshing..." : "Manual Refresh"}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-800/60 overflow-hidden">

@@ -1,5 +1,7 @@
 // frontend/dashboard/src/components/front2/DERCard.tsx
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 
 export interface DERCardProps {
   id: string;
@@ -39,7 +41,32 @@ export const DERCard: React.FC<DERCardProps> = ({
 }) => {
   // safety por si backend manda cosas raras
   const safeCapacity = Math.max(0, capacity);
-  const safeAvailable = Math.min(safeCapacity, Math.max(0, available));
+  const baseAvailable = Math.min(safeCapacity, Math.max(0, available));
+  
+  // Dynamic utilization simulation
+  const [dynamicAvailable, setDynamicAvailable] = useState(baseAvailable);
+  
+  useEffect(() => {
+    // Only animate if status is ACTIVE or ALLOCATED
+    if (status !== "ACTIVE" && status !== "ALLOCATED") {
+      setDynamicAvailable(baseAvailable);
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      // Small random fluctuation (±5% of capacity)
+      const fluctuation = (Math.random() - 0.5) * safeCapacity * 0.1;
+      const newAvailable = Math.min(
+        safeCapacity,
+        Math.max(0, baseAvailable + fluctuation)
+      );
+      setDynamicAvailable(newAvailable);
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, [baseAvailable, safeCapacity, status]);
+  
+  const safeAvailable = dynamicAvailable;
   const usedKw = Math.max(0, safeCapacity - safeAvailable);
 
   const utilization = safeCapacity > 0 ? (usedKw / safeCapacity) * 100 : 0;
@@ -84,7 +111,7 @@ export const DERCard: React.FC<DERCardProps> = ({
           <span className="text-[11px] font-medium text-slate-200">
             {safeCapacity > 0 ? (
               <>
-                {usedKw} / {safeCapacity} kW ·{" "}
+                {usedKw.toFixed(1)} / {safeCapacity} kW ·{" "}
                 {Number.isFinite(utilizationPercent)
                   ? `${Math.round(utilizationPercent)}%`
                   : "–"}
@@ -94,9 +121,9 @@ export const DERCard: React.FC<DERCardProps> = ({
             )}
           </span>
         </div>
-        <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+        <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
           <div
-            className={`h-full ${utilizationColor} transition-all duration-300`}
+            className={`h-full ${utilizationColor} transition-all duration-1000 ease-in-out`}
             style={{ width: `${utilizationPercent}%` }}
           />
         </div>
@@ -111,7 +138,7 @@ export const DERCard: React.FC<DERCardProps> = ({
         <div>
           <span className="text-slate-400">Available</span>
           <p className="text-emerald-300 font-medium mt-0.5">
-            {safeAvailable} kW
+            {safeAvailable.toFixed(1)} kW
           </p>
         </div>
         {typeof responseTime === "number" && (

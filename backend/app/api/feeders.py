@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.core.simulator import grid_sim
-from datetime import datetime
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -30,16 +30,41 @@ def list_feeders():
 
 @router.get("/{feeder_id}/state")
 def feeder_state(feeder_id: str):
-    """Returns current state of a specific feeder with real-time data"""
-    reading = grid_sim.get_reading()
+    """Returns current state of a specific feeder with real-time data and historical points"""
+    
+    # Generate current reading
+    current_time = datetime.now()
+    reading = grid_sim.get_reading(current_time)
+    
+    # Generate historical data points (last 6 hours, 15-minute intervals = 24 points)
+    history = []
+    for i in range(24, 0, -1):
+        past_time = current_time - timedelta(minutes=15 * i)
+        past_reading = grid_sim.get_reading(past_time, inject_spikes=False)
+        history.append({
+            "timestamp": past_reading.timestamp.isoformat(),
+            "load_kw": past_reading.load_kw,
+            "temperature": past_reading.temperature,
+            "is_workday": past_reading.is_workday,
+            "risk_label": past_reading.risk_label
+        })
+    
+    # Generate forecast (next 4 points = 1 hour ahead)
+    forecast = []
+    for i in range(1, 5):
+        future_time = current_time + timedelta(minutes=15 * i)
+        future_reading = grid_sim.get_reading(future_time, inject_spikes=False)
+        forecast.append(future_reading.load_kw)
     
     return {
-        "id": feeder_id,
-        "state": reading.risk_label,
-        "load_kw": reading.load_kw,
-        "temperature": reading.temperature,
+        "feeder_id": feeder_id,
+        "timestamp": reading.timestamp.isoformat(),
+        "risk_level": reading.risk_label,
+        "current_load_kw": reading.load_kw,
+        "forecast_load_kw": forecast[0] if forecast else None,
         "threshold_kw": grid_sim.max_capacity_kw * grid_sim.warning_threshold,
         "critical_threshold_kw": grid_sim.max_capacity_kw * grid_sim.critical_threshold,
-        "timestamp": reading.timestamp.isoformat(),
-        "is_workday": reading.is_workday
+        "recent_history": history,
+        "forecast_kw": forecast,
+        "message": f"Feeder {feeder_id} operating normally" if reading.risk_label == 0 else f"Feeder {feeder_id} in alert state"
     }

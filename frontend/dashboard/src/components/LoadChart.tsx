@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  ReferenceDot,
 } from "recharts";
 
 type HistoryPoint = {
@@ -220,7 +221,10 @@ export default function LoadChart({ feederId }: Props) {
         </div>
         <div className="flex flex-col items-end">
           <span className="text-[11px] text-slate-300">
-            Blue: actual · Cyan: forecast · Red: threshold
+            Blue: actual · Cyan: forecast · Red: thresholds
+          </span>
+          <span className="text-[10px] text-slate-400">
+            🔴 Critical peaks · 🟡 Warning peaks
           </span>
           {lastUpdate && (
             <span className="text-[10px] text-slate-500">
@@ -245,6 +249,12 @@ export default function LoadChart({ feederId }: Props) {
       <div className="flex-1 min-h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
+            <defs>
+              <linearGradient id="loadGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#38BDF8" stopOpacity={0.05}/>
+              </linearGradient>
+            </defs>
             <XAxis
               dataKey="label"
               tick={{ fontSize: 10, fill: "#64748B" }}
@@ -269,22 +279,87 @@ export default function LoadChart({ feederId }: Props) {
               y={thresholdKw}
               stroke="#EF4444"
               strokeDasharray="4 4"
+              label={{ 
+                value: "Warning", 
+                position: "right", 
+                fill: "#EF4444", 
+                fontSize: 10 
+              }}
+            />
+            <ReferenceLine
+              y={thresholdKw * (0.95/0.85)}
+              stroke="#DC2626"
+              strokeDasharray="4 4"
+              label={{ 
+                value: "Critical", 
+                position: "right", 
+                fill: "#DC2626", 
+                fontSize: 10 
+              }}
             />
             <Line
-              type="monotone"
+              type="natural"
               dataKey="load"
               stroke="#38BDF8"
-              strokeWidth={2}
+              strokeWidth={2.5}
               dot={false}
+              fill="url(#loadGradient)"
+              fillOpacity={1}
             />
             <Line
-              type="monotone"
+              type="natural"
               dataKey="forecast"
               stroke="#22D3EE"
-              strokeWidth={2}
-              strokeDasharray="4 4"
+              strokeWidth={2.5}
+              strokeDasharray="5 5"
               dot={false}
             />
+            {/* Peak detection markers */}
+            {chartData.map((point, idx) => {
+              const value = point.load ?? point.forecast;
+              if (!value) return null;
+              
+              const criticalThreshold = thresholdKw * (0.95/0.85);
+              
+              if (value >= criticalThreshold) {
+                return (
+                  <ReferenceDot
+                    key={`peak-critical-${idx}`}
+                    x={point.label}
+                    y={value}
+                    r={5}
+                    fill="#DC2626"
+                    stroke="#FEE2E2"
+                    strokeWidth={2}
+                  />
+                );
+              } else if (value >= thresholdKw) {
+                return (
+                  <ReferenceDot
+                    key={`peak-warning-${idx}`}
+                    x={point.label}
+                    y={value}
+                    r={4}
+                    fill="#F59E0B"
+                    stroke="#FEF3C7"
+                    strokeWidth={2}
+                  />
+                );
+              }
+              return null;
+            })}
+            {/* Current/Most Recent Point Marker */}
+            {historyPoints.length > 0 && (
+              <ReferenceDot
+                x={historyPoints[historyPoints.length - 1].label}
+                y={historyPoints[historyPoints.length - 1].load}
+                r={6}
+                fill="#38BDF8"
+                stroke="#FFFFFF"
+                strokeWidth={2.5}
+                className="animate-pulse"
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>

@@ -79,7 +79,7 @@ export const BecknTimeline: React.FC<BecknTimelineProps> = ({
                 {index > 0 && (
                   <div
                     className={[
-                      "h-px flex-1",
+                      "h-px flex-1 transition-all duration-500",
                       isDone
                         ? "bg-emerald-400"
                         : isActive
@@ -89,14 +89,14 @@ export const BecknTimeline: React.FC<BecknTimelineProps> = ({
                   />
                 )}
 
-                {/* Dot */}
+                {/* Dot with animation */}
                 <div
                   className={[
-                    "shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold",
+                    "shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold transition-all duration-300",
                     isDone
-                      ? "bg-emerald-500 text-slate-950"
+                      ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/50"
                       : isActive
-                      ? "bg-sky-400 text-slate-950"
+                      ? "bg-sky-400 text-slate-950 shadow-lg shadow-sky-400/50 animate-pulse"
                       : "bg-slate-800 text-slate-400 border border-slate-600",
                   ].join(" ")}
                 >
@@ -107,7 +107,7 @@ export const BecknTimeline: React.FC<BecknTimelineProps> = ({
                 {index < STEPS.length - 1 && (
                   <div
                     className={[
-                      "h-px flex-1",
+                      "h-px flex-1 transition-all duration-500",
                       isDone || isActive ? "bg-sky-400" : "bg-slate-700",
                     ].join(" ")}
                   />
@@ -115,19 +115,33 @@ export const BecknTimeline: React.FC<BecknTimelineProps> = ({
               </div>
 
               {/* Label + timestamp */}
-              <div className="mt-1 text-center">
+              <div className="mt-2 text-center">
                 <p
                   className={[
-                    "text-[11px] uppercase tracking-wide",
-                    isActive || isDone ? "text-slate-100" : "text-slate-500",
+                    "text-[11px] uppercase tracking-wide font-semibold transition-colors duration-300",
+                    isActive
+                      ? "text-sky-300"
+                      : isDone
+                      ? "text-emerald-300"
+                      : "text-slate-500",
                   ].join(" ")}
                 >
                   {step}
                 </p>
-                {/* TODO: DEMO METRICS - Timestamps displayed here come from backend callbacks */}
-                {/* For demo, can inject specific values like "T+0ms", "T+120ms", "T+250ms", "T+345ms" */}
+                {/* Timestamp with highlight */}
                 {ts && (
-                  <p className="text-[10px] text-slate-500 mt-0.5">{ts}</p>
+                  <p
+                    className={[
+                      "text-[10px] mt-1 px-2 py-0.5 rounded-full inline-block font-mono transition-all duration-300",
+                      isDone
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                        : isActive
+                        ? "bg-sky-500/20 text-sky-300 border border-sky-500/30 animate-pulse"
+                        : "bg-slate-800/50 text-slate-500",
+                    ].join(" ")}
+                  >
+                    {ts}
+                  </p>
                 )}
               </div>
             </li>

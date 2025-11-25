@@ -212,6 +212,146 @@ export default function Front2Page() {
               filterFeederId={urlFeederId}
             />
           </div>
+
+          {/* Event Detail (below Flexibility events) */}
+          {selectedEvent && (
+            <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-100">
+                    Event detail
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    {selectedEvent.feederName} • {selectedEvent.id}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Backend audit: Beckn calls logged for {selectedEvent.obpId}.
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/?feeder=${encodeURIComponent(selectedEvent.feederId)}`
+                      )
+                    }
+                    className="text-[11px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
+                  >
+                    Open in overview
+                  </button>
+                  <button
+                    onClick={() => setSelectedEvent(null)}
+                    className="text-slate-400 hover:text-slate-200 text-sm transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* KPIs del evento */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <span className="text-[11px] text-slate-400">Status</span>
+                  <p className="text-base font-semibold text-blue-400 mt-1">
+                    {selectedEvent.status}
+                  </p>
+                  {selectedEvent.becknStep && (
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Beckn step:{" "}
+                      <span className="font-medium text-slate-100">
+                        {selectedEvent.becknStep}
+                      </span>
+                      {remainingSteps !== null && (
+                        <>
+                          {" "}
+                          · est. remaining: {remainingSteps} step
+                          {remainingSteps === 1 ? "" : "s"}
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400">Flex requested</span>
+                  <p className="text-base font-semibold text-slate-100 mt-1">
+                    {selectedEvent.flexRequested} kW
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400">Flex delivered</span>
+                  <p className="text-base font-semibold text-emerald-400 mt-1">
+                    {selectedEvent.flexDelivered} kW
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400">OBP ID</span>
+                  <p className="text-base font-semibold text-slate-100 mt-1">
+                    {selectedEvent.obpId}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-1 p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  <span className="font-semibold text-slate-100">Summary:</span>{" "}
+                  {selectedEvent.derCount} DERs allocated to support{" "}
+                  {selectedEvent.flexRequested} kW demand on feeder{" "}
+                  {selectedEvent.feederId}. Delivered {selectedEvent.flexDelivered}{" "}
+                  kW (
+                  {Math.round(
+                    (selectedEvent.flexDelivered / selectedEvent.flexRequested) *
+                      100
+                  )}
+                  % success).
+                </p>
+              </div>
+
+              {/* Mini audit trail real por OBP */}
+              {selectedEvent.obpId && (
+                <div className="mt-4 p-3 bg-slate-900/60 rounded-lg border border-slate-800">
+                  <h4 className="text-xs font-semibold text-slate-200 mb-1.5">
+                    OBP workflow (backend audit)
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mb-2">
+                    Backend audit: Beckn calls logged for {selectedEvent.obpId}.
+                  </p>
+                  {auditLoading && (
+                    <p className="text-[11px] text-slate-400">Loading audit…</p>
+                  )}
+                  {!auditLoading && auditLog && (
+                    <ul className="space-y-1 text-[11px] text-slate-300">
+                      {auditLog.entries.map((entry) => (
+                        <li
+                          key={entry.ts}
+                          className="flex gap-2 items-baseline text-xs"
+                        >
+                          <span className="text-slate-500 w-28 shrink-0">
+                            {new Date(entry.ts).toLocaleTimeString("en-GB", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                            })}
+                          </span>
+                          <span>{entry.message}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Audit Trail (below Event detail) */}
+          <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4">
+            <h3 className="text-sm font-semibold text-slate-100 mb-3">
+              Audit trail (aggregated view)
+            </h3>
+            <AuditView
+              logsFromBackend={recentAuditLogs}
+              isLoading={recentAuditLoading}
+            />
+          </div>
         </div>
 
         {/* Right Column: DER Grid */}
@@ -224,153 +364,13 @@ export default function Front2Page() {
               Sorted by response time and cost. Mock data for demo; ready to
               plug real Beckn catalog.
             </p>
-            <div className="space-y-3 overflow-y-auto pr-1 max-h-[540px]">
+            <div className="space-y-3">
               {MOCK_DERS.map((der) => (
                 <DERCard key={der.id} {...der} />
               ))}
             </div>
           </div>
         </div>
-      </section>
-
-      {/* Selected Event Detail (Conditional) */}
-      {selectedEvent && (
-        <section className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-100">
-                Event detail
-              </h3>
-              <p className="text-xs text-slate-400">
-                {selectedEvent.feederName} • {selectedEvent.id}
-              </p>
-              <p className="mt-1 text-[11px] text-slate-500">
-                Backend audit: Beckn calls logged for {selectedEvent.obpId}.
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              <button
-                onClick={() =>
-                  router.push(
-                    `/?feeder=${encodeURIComponent(selectedEvent.feederId)}`
-                  )
-                }
-                className="text-[11px] text-sky-300 hover:text-sky-200 underline underline-offset-2"
-              >
-                Open in overview
-              </button>
-              <button
-                onClick={() => setSelectedEvent(null)}
-                className="text-slate-400 hover:text-slate-200 text-sm transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          {/* KPIs del evento */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <span className="text-[11px] text-slate-400">Status</span>
-              <p className="text-base font-semibold text-blue-400 mt-1">
-                {selectedEvent.status}
-              </p>
-              {selectedEvent.becknStep && (
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Beckn step:{" "}
-                  <span className="font-medium text-slate-100">
-                    {selectedEvent.becknStep}
-                  </span>
-                  {remainingSteps !== null && (
-                    <>
-                      {" "}
-                      · est. remaining: {remainingSteps} step
-                      {remainingSteps === 1 ? "" : "s"}
-                    </>
-                  )}
-                </p>
-              )}
-            </div>
-            <div>
-              <span className="text-[11px] text-slate-400">Flex requested</span>
-              <p className="text-base font-semibold text-slate-100 mt-1">
-                {selectedEvent.flexRequested} kW
-              </p>
-            </div>
-            <div>
-              <span className="text-[11px] text-slate-400">Flex delivered</span>
-              <p className="text-base font-semibold text-emerald-400 mt-1">
-                {selectedEvent.flexDelivered} kW
-              </p>
-            </div>
-            <div>
-              <span className="text-[11px] text-slate-400">OBP ID</span>
-              <p className="text-base font-semibold text-slate-100 mt-1">
-                {selectedEvent.obpId}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-1 p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <p className="text-[11px] text-slate-300 leading-relaxed">
-              <span className="font-semibold text-slate-100">Summary:</span>{" "}
-              {selectedEvent.derCount} DERs allocated to support{" "}
-              {selectedEvent.flexRequested} kW demand on feeder{" "}
-              {selectedEvent.feederId}. Delivered {selectedEvent.flexDelivered}{" "}
-              kW (
-              {Math.round(
-                (selectedEvent.flexDelivered / selectedEvent.flexRequested) *
-                  100
-              )}
-              % success).
-            </p>
-          </div>
-
-          {/* Mini audit trail real por OBP */}
-          {selectedEvent.obpId && (
-            <div className="mt-4 p-3 bg-slate-900/60 rounded-lg border border-slate-800">
-              <h4 className="text-xs font-semibold text-slate-200 mb-1.5">
-                OBP workflow (backend audit)
-              </h4>
-              <p className="text-[11px] text-slate-400 mb-2">
-                Backend audit: Beckn calls logged for {selectedEvent.obpId}.
-              </p>
-              {auditLoading && (
-                <p className="text-[11px] text-slate-400">Loading audit…</p>
-              )}
-              {!auditLoading && auditLog && (
-                <ul className="space-y-1 text-[11px] text-slate-300">
-                  {auditLog.entries.map((entry) => (
-                    <li
-                      key={entry.ts}
-                      className="flex gap-2 items-baseline text-xs"
-                    >
-                      <span className="text-slate-500 w-28 shrink-0">
-                        {new Date(entry.ts).toLocaleTimeString("en-GB", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                        })}
-                      </span>
-                      <span>{entry.message}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Audit View (tabla agregada / mock) */}
-      <section className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4">
-        <h3 className="text-sm font-semibold text-slate-100 mb-3">
-          Audit trail (aggregated view)
-        </h3>
-        <AuditView
-          logsFromBackend={recentAuditLogs}
-          isLoading={recentAuditLoading}
-        />
       </section>
 
       {/* Footer Info */}
