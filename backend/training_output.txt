@@ -1,6 +1,0 @@
-======================================================================
-FLUXORAX AI Training - WITH DATASET PREVIEW
-======================================================================
-
-[1/7] Generating synthetic data...
-Generating 5760 data points for training...
