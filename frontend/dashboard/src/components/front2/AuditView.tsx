@@ -110,7 +110,7 @@ export const AuditView: React.FC<AuditViewProps> = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 min-h-[250px]">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] text-slate-400">
           Aggregated OBP audit trail · Each row is a Beckn call logged by the

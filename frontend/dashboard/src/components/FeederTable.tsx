@@ -55,7 +55,7 @@ export default function FeederTable({
   });
 
   return (
-    <div className="border border-slate-800 rounded-2xl bg-[#02091F] px-4 py-4 shadow-lg shadow-emerald-500/5">
+    <div className="border border-slate-800 rounded-2xl bg-[#02091F] px-4 py-4 shadow-lg shadow-emerald-500/5 min-h-[200px]">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>
