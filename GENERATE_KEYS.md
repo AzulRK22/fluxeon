@@ -2,14 +2,14 @@
 
 ## Herramienta Encontrada
 
-**Ubicación**: `d:\Users\lauta\Desktop\hackathonDEG\beckn-home\beckn-onix-main\install\generate-ed25519-keys.go`
+**Ubicación**: `d:\..\beckn-home\beckn-onix-main\install\generate-ed25519-keys.go`
 
 ## Comando para Generar Claves
 
 ### Opción 1: Usando Go (Recomendado)
 
 ```bash
-cd d:\Users\lauta\Desktop\hackathonDEG\beckn-home\beckn-onix-main
+cd d:\..\beckn-home\beckn-onix-main
 go run install/generate-ed25519-keys.go
 ```
 
@@ -17,7 +17,7 @@ go run install/generate-ed25519-keys.go
 
 ```
 === Ed25519 Key Pair ===
-signingPrivateKey: lP3sHA+9gileOkXYJXh4Jg8tK0gEEMbf9yCPnFpbldhrGLzKGkgQQPyGRCz/CM+kpMCv0n3a8i5k2RfLsVoObQ==
+signingPrivateKey: lP3sHA+9gileOkXYJXh7Jg8tK0gEEMbf9yCPnFpbldhrGLzKGkgQQPyGRCz/CM+kpMCv0n3a8i5k2RfLsVoObQ==
 signingPublicKey: axi8yhpIEED8hkQs/wjPpKTAr9J92vIuZNkXy7FaDm0=
 ```
 
@@ -84,7 +84,7 @@ BECKN_ENCRYPTION_PUBLIC_KEY=<pega aquí signingPublicKey>
 Para verificar que las claves funcionan:
 
 ```bash
-cd d:\Users\lauta\Desktop\hackathonDEG\fluxeon
+cd d:\..\fluxeon
 docker-compose restart beckn-onix
 docker logs beckn-onix | grep "subscriber"
 ```
