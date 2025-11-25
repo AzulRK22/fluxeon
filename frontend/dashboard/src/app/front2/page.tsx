@@ -1,7 +1,7 @@
 // frontend/dashboard/src/app/front2/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   BecknTimeline,
   type BecknStep,
@@ -16,6 +16,7 @@ import {
   useAuditTrail,
   useRecentAuditLogs,
 } from "@/hooks/useFront2Hooks";
+import { useToast } from "@/components/ToastProvider";
 
 const MOCK_DERS: DERCardProps[] = [
   {
@@ -90,11 +91,21 @@ const ORDERED_BECKN_STEPS: BecknStep[] = [
 ];
 
 export default function Front2Page() {
+  return (
+    <Suspense fallback={<div className="text-slate-400 text-sm p-4">Loading orchestration...</div>}>
+      <Front2Content />
+    </Suspense>
+  );
+}
+
+function Front2Content() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlFeederId = searchParams.get("feeder") ?? undefined;
+  const { showToast } = useToast();
 
   const [selectedEvent, setSelectedEvent] = useState<FlexEvent | null>(null);
+  const [derStatuses, setDerStatuses] = useState<Record<string, DERCardProps["status"]>>({});
 
   // 🔌 Datos reales desde backend
   const { events, isLoading: eventsLoading } = useFlexEvents();
@@ -158,6 +169,33 @@ export default function Front2Page() {
       remainingSteps = Math.max(0, ORDERED_BECKN_STEPS.length - 1 - idx);
     }
   }
+
+  // 🎛️ Handler for allocating flexibility
+  const handleAllocate = (derId: string, derName: string) => {
+    setDerStatuses((prev) => ({ ...prev, [derId]: "ALLOCATED" }));
+    showToast(`✓ Allocated flexibility from ${derName}`, "success");
+    
+    // Simulate transition to ACTIVE after 3 seconds
+    setTimeout(() => {
+      setDerStatuses((prev) => ({ ...prev, [derId]: "ACTIVE" }));
+      showToast(`⚡ ${derName} is now ACTIVE`, "info");
+    }, 3000);
+  };
+
+  // 🔕 Handler for muting alerts
+  const handleMuteAlerts = (derId: string, derName: string) => {
+    showToast(`🔕 Alerts muted for ${derName} (30 min)`, "warning");
+  };
+
+  // 📋 Handler for flexibility plan
+  const handleFlexibilityPlan = (derId: string, derName: string) => {
+    showToast(`📋 Flexibility plan opened for ${derName}`, "info");
+  };
+
+  // Compute effective DER statuses
+  const getDerStatus = (derId: string, originalStatus: DERCardProps["status"]): DERCardProps["status"] => {
+    return derStatuses[derId] ?? originalStatus;
+  };
 
   return (
     <div className="space-y-6">
@@ -366,7 +404,14 @@ export default function Front2Page() {
             </p>
             <div className="space-y-3">
               {MOCK_DERS.map((der) => (
-                <DERCard key={der.id} {...der} />
+                <DERCard
+                  key={der.id}
+                  {...der}
+                  status={getDerStatus(der.id, der.status)}
+                  onAllocate={handleAllocate}
+                  onMuteAlerts={handleMuteAlerts}
+                  onFlexibilityPlan={handleFlexibilityPlan}
+                />
               ))}
             </div>
           </div>

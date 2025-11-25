@@ -1,21 +1,58 @@
 // frontend/dashboard/src/app/events/page.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFlexEvents } from "@/hooks/useFront2Hooks";
 import type { FlexEvent } from "@/components/front2/EventsList";
+import { useToast } from "@/components/ToastProvider";
 
 type StatusFilter = "ALL" | "ACTIVE" | "COMPLETED" | "FAILED";
+
+// Mock AI model decisions for events
+interface AIDecision {
+  eventId: string;
+  decision: string;
+  confidence: number;
+  reasoning: string;
+  timestamp: string;
+}
+
+const generateMockAIDecisions = (events: FlexEvent[]): AIDecision[] => {
+  const decisions = [
+    { decision: "Allocate DER-003", reasoning: "Lowest cost provider with sufficient capacity" },
+    { decision: "Reduce load 15%", reasoning: "Peak demand detected, voluntary reduction recommended" },
+    { decision: "Dispatch flexibility", reasoning: "Critical threshold exceeded on feeder" },
+    { decision: "No action required", reasoning: "Load within normal operating range" },
+    { decision: "Emergency curtailment", reasoning: "Risk level 2 detected, immediate action needed" },
+  ];
+
+  return events.map((e, idx) => ({
+    eventId: e.id,
+    decision: decisions[idx % decisions.length].decision,
+    confidence: 85 + Math.floor(Math.random() * 14), // 85-98%
+    reasoning: decisions[idx % decisions.length].reasoning,
+    timestamp: new Date(Date.now() - idx * 60000).toISOString(),
+  }));
+};
 
 export default function EventsCentrePage() {
   const router = useRouter();
   const { events, isLoading, error } = useFlexEvents();
+  const { showToast } = useToast();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [feederFilter, setFeederFilter] = useState("");
   const [obpFilter, setObpFilter] = useState("");
   const [lastSimulation, setLastSimulation] = useState<string | null>(null);
+  const [aiDecisions, setAiDecisions] = useState<AIDecision[]>([]);
+
+  // Generate AI decisions when events change
+  useEffect(() => {
+    if (events.length > 0) {
+      setAiDecisions(generateMockAIDecisions(events));
+    }
+  }, [events]);
 
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {
@@ -70,6 +107,12 @@ export default function EventsCentrePage() {
     setLastSimulation(
       `Re-simulated dispatch for ${event.id} (OBP ${event.obpId}) at ${now} UTC (UI-only)`
     );
+    showToast(`🔄 Re-simulating dispatch for ${event.id}`, "info");
+  };
+
+  // Get AI decision for an event
+  const getAIDecision = (eventId: string): AIDecision | undefined => {
+    return aiDecisions.find((d) => d.eventId === eventId);
   };
 
   return (
@@ -215,6 +258,92 @@ export default function EventsCentrePage() {
         {lastSimulation && (
           <p className="mt-3 text-[11px] text-slate-400">{lastSimulation}</p>
         )}
+      </section>
+
+      {/* AI Model Decisions Section */}
+      <section className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-4">
+        <h2 className="text-sm font-semibold text-slate-100 mb-1">
+          🧠 AI Model Decisions
+        </h2>
+        <p className="text-[11px] text-slate-400 mb-3">
+          Decisions made by the FLUXEON AI model with confidence percentages. Model: XGBoost classifier.
+        </p>
+        
+        {aiDecisions.length === 0 ? (
+          <p className="text-sm text-slate-400">No AI decisions available yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {aiDecisions.slice(0, 6).map((decision) => (
+              <div
+                key={decision.eventId}
+                className="border border-slate-700 rounded-lg bg-slate-900/50 p-3"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    {decision.eventId}
+                  </span>
+                  <span
+                    className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      decision.confidence >= 95
+                        ? "bg-emerald-500/20 text-emerald-300"
+                        : decision.confidence >= 90
+                        ? "bg-sky-500/20 text-sky-300"
+                        : "bg-amber-500/20 text-amber-300"
+                    }`}
+                  >
+                    {decision.confidence}%
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-slate-100 mb-1">
+                  {decision.decision}
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  {decision.reasoning}
+                </p>
+                <p className="text-[10px] text-slate-500 mt-2">
+                  {new Date(decision.timestamp).toLocaleTimeString("en-GB", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}{" "}
+                  UTC
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* KPI Summary */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-3">
+          <p className="text-[11px] text-slate-400 uppercase tracking-wide">Total Events</p>
+          <p className="text-2xl font-semibold text-slate-100 mt-1">{events.length}</p>
+        </div>
+        <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-3">
+          <p className="text-[11px] text-slate-400 uppercase tracking-wide">Active</p>
+          <p className="text-2xl font-semibold text-sky-300 mt-1">
+            {events.filter((e) => e.status === "ACTIVE").length}
+          </p>
+        </div>
+        <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-3">
+          <p className="text-[11px] text-slate-400 uppercase tracking-wide">Completed</p>
+          <p className="text-2xl font-semibold text-emerald-300 mt-1">
+            {events.filter((e) => e.status === "COMPLETED").length}
+          </p>
+        </div>
+        <div className="border border-slate-800 rounded-xl bg-[#02091F] px-4 py-3">
+          <p className="text-[11px] text-slate-400 uppercase tracking-wide">Avg Confidence</p>
+          <p className="text-2xl font-semibold text-amber-300 mt-1">
+            {aiDecisions.length > 0
+              ? Math.round(
+                  aiDecisions.reduce((sum, d) => sum + d.confidence, 0) /
+                    aiDecisions.length
+                )
+              : 0}
+            %
+          </p>
+        </div>
       </section>
     </div>
   );

@@ -1,7 +1,7 @@
 // frontend/dashboard/src/app/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import FeederTable, { Feeder } from "@/components/FeederTable";
 import LoadChart from "@/components/LoadChart";
@@ -23,6 +23,14 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export default function CommandCentrePage() {
+  return (
+    <Suspense fallback={<div className="text-slate-400 text-sm p-4">Loading...</div>}>
+      <CommandCentreContent />
+    </Suspense>
+  );
+}
+
+function CommandCentreContent() {
   const searchParams = useSearchParams();
 
   const [feeders, setFeeders] = useState<Feeder[]>([]);

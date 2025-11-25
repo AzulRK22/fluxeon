@@ -12,6 +12,9 @@ export interface DERCardProps {
   status: "AVAILABLE" | "ALLOCATED" | "ACTIVE" | "UNAVAILABLE";
   responseTime?: number; // seconds
   cost?: number; // price per kWh
+  onAllocate?: (id: string, name: string) => void;
+  onMuteAlerts?: (id: string, name: string) => void;
+  onFlexibilityPlan?: (id: string, name: string) => void;
 }
 
 const STATUS_STYLES: Record<DERCardProps["status"], string> = {
@@ -38,6 +41,9 @@ export const DERCard: React.FC<DERCardProps> = ({
   status,
   responseTime,
   cost,
+  onAllocate,
+  onMuteAlerts,
+  onFlexibilityPlan,
 }) => {
   // safety por si backend manda cosas raras
   const safeCapacity = Math.max(0, capacity);
@@ -159,15 +165,34 @@ export const DERCard: React.FC<DERCardProps> = ({
         )}
       </div>
 
-      {/* Quick action */}
-      {status === "AVAILABLE" && (
-        <button
-          type="button"
-          className="w-full mt-3 rounded-lg bg-emerald-500/90 hover:bg-emerald-400 text-slate-950 text-xs font-semibold py-2 transition-colors"
-        >
-          Allocate flexibility
-        </button>
-      )}
+      {/* Quick actions */}
+      <div className="mt-3 flex flex-col gap-2">
+        {status === "AVAILABLE" && (
+          <button
+            type="button"
+            onClick={() => onAllocate?.(id, name)}
+            className="w-full rounded-lg bg-emerald-500/90 hover:bg-emerald-400 text-slate-950 text-xs font-semibold py-2 transition-colors"
+          >
+            Allocate flexibility
+          </button>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onFlexibilityPlan?.(id, name)}
+            className="flex-1 rounded-lg border border-sky-500/60 bg-sky-500/10 hover:bg-sky-500/20 text-sky-200 text-[10px] font-semibold py-1.5 transition-colors"
+          >
+            Flexibility Plan
+          </button>
+          <button
+            type="button"
+            onClick={() => onMuteAlerts?.(id, name)}
+            className="flex-1 rounded-lg border border-amber-500/60 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-[10px] font-semibold py-1.5 transition-colors"
+          >
+            Mute Alerts
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
