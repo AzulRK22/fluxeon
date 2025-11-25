@@ -23,10 +23,8 @@ def generate_ed25519_keypair():
     return private_b64, public_b64
 
 if __name__ == "__main__":
-    print("=" * 60)
+
     print("FLUXEON - Ed25519 Key Generator")
-    print("=" * 60)
-    
     private_key, public_key = generate_ed25519_keypair()
     
     print("\n=== Ed25519 Key Pair ===")
@@ -39,6 +37,6 @@ if __name__ == "__main__":
     print(f"BECKN_ENCRYPTION_PRIVATE_KEY={private_key}")
     print(f"BECKN_ENCRYPTION_PUBLIC_KEY={public_key}")
     
-    print("\n" + "=" * 60)
-    print("⚠️  IMPORTANT: Keep the private key secure!")
-    print("=" * 60)
+
+    print("done")
+
